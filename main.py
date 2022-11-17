@@ -14,6 +14,17 @@ fpsLimit = 60
 trueSpeed = 300
 gameSpeed = trueSpeed/fpsLimit
 
+xmax, ymax = 1160, 610
+xmin, ymin = 0, 0
+
+ex, ey = 800, 500
+e_xmin, e_ymin = -ex, -ey
+e_xmax, e_ymax = ex+xmax, ey+ymax
+
+bx, by = 500, 300
+bg_xmin, bg_ymin = -bx, -by
+bg_xmax, bg_ymax = bx+xmax, by+ymax
+
 def checkMovement(direct, event):
     if event.type == pg.KEYDOWN:
         if event.key == pg.K_RIGHT:
@@ -37,15 +48,18 @@ def checkMovement(direct, event):
     except:
         pass
     return direct
+def spawnEnemy(img, hp, dmg, sp):
+    x1, y1 = rd.randint(e_xmin, xmin), rd.randint(e_ymin, ymin)
+    x2, y2 = rd.randint(xmax, e_xmax), rd.randint(ymax, e_ymax)
+    x = rd.randint(1,2)
+    x = x1 if x==1 else x2
+    y = rd.randint(1,2)
+    y = y1 if y==1 else y2
+    return Enemy([x, y], img, hp, dmg, sp, gameSpeed)
 
 def main():
     pg.init()
     global gameSpeed
-
-    xmax = 1160
-    ymax = 610
-    xmin = 0
-    ymin = 0
 
     timer = 0
     ticks = 0
@@ -61,9 +75,6 @@ def main():
     
     background = []
     n = 50
-    bx, by = 500, 300
-    bg_xmin, bg_ymin = -bx, -by
-    bg_xmax, bg_ymax = bx+xmax, by+ymax
     for x in range(n):
         bg = Background([rd.randint(bg_xmin, bg_xmax), rd.randint(bg_ymin, bg_ymax)], "grass.png", gameSpeed)
         background.append(bg)
@@ -71,7 +82,8 @@ def main():
     enemies = []
     n = 5
     for x in range(0, n):
-        obj = Enemy([rd.randint(0, xmax), rd.randint(0, ymax)], ["player1.png"], 200, 10, .5, gameSpeed)
+        obj = Enemy([rd.randint(e_xmin, e_xmax), rd.randint(e_ymin, e_ymax)], ["enemy.png"], 200, 10, 4.0, gameSpeed)
+        obj = spawnEnemy(["enemy.png"], 200, 10, 4.0)
         enemies.append(obj)
 
     direct = []
@@ -106,12 +118,22 @@ def main():
             background[i].draw(screen)
         
         for i, obj in enumerate(enemies):
+            #Enemy movement
+            enemies[i].mainMove([xmax/2, ymax/2])
             enemies[i].move(direct)
+
             enemies[i].draw(screen)
+
+            oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
+            if oor:
+                del enemies[i]
 
         #Tick rate Manager
         if timer % int(round(fpsLimit/10)) == 0 and timer != 0:
             ticks += 1
+            if ticks%10 == 0:
+                obj = spawnEnemy(["enemy.png"], 200, 10, 4.0)
+                enemies.append(obj)
 
         player.draw(screen)
 

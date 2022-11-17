@@ -1,24 +1,18 @@
+from tkinter import Y
 import pygame as pg
 import math as m
+import numpy as np
 import time
 import os
 
 class Object:
     def __init__(self, position, image):
-        self.pos = position
+        self.pos = np.array(position, dtype="float64")
         self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image))
-        self.hitbox = [self.pos[0],
-            self.pos[0]+self.image.get_width(),
-            self.pos[1],
-            self.pos[1]+self.image.get_height()
-            ]
-
+        self.hitbox = np.array([self.pos,self.pos+[self.image.get_width(),self.image.get_height()]])
+    
     def moveHitbox(self):
-        self.hitbox = [self.pos[0],
-            self.pos[0]+self.image.get_width(),
-            self.pos[1],
-            self.pos[1]+self.image.get_height()
-            ]
+        self.hitbox = np.array([self.pos,self.pos+[self.image.get_width(),self.image.get_height()]])
 
     def loadImage(self, image):
         self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image))
@@ -66,8 +60,13 @@ class Enemy(NonPlayerObject):
         self.dmg = dmg
         self.movementSpeed = speed
     
-    def mainMove(self, playerPos):
-        pass #Later
+    def mainMove(self, target):
+        center = np.array(target) - np.array([self.image.get_width()/2, self.image.get_height()/2])
+        dist = center - self.pos
+        add = abs(dist[0]) + abs(dist[1])
+        dist *= self.movementSpeed
+        dist /= add
+        self.pos += dist
 
 class Background(NonPlayerObject):
     def __init__(self, position, image, gSpeed):
