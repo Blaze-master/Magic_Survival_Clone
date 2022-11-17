@@ -5,9 +5,9 @@ import time
 import os
 import random as rd
 
-from characters import Player 
-from characters import Enemy
-from characters import Background
+from objects import Player 
+from objects import Enemy
+from objects import Background
 
 #Constants
 fpsLimit = 60
@@ -44,6 +44,8 @@ def main():
 
     xmax = 1160
     ymax = 610
+    xmin = 0
+    ymin = 0
 
     timer = 0
     ticks = 0
@@ -52,15 +54,18 @@ def main():
     running = True
     pg.display.set_caption("Magic survival")
 
-    player = Player([570, 288], ["player1.png"])
-    #x=(-216, 1376) y=(-192.5, 802.5)
+    playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
+    ph = playerImg.get_height()
+    pw = playerImg.get_width()
+    player = Player([(xmax-pw)/2, (ymax-ph)/2], ["player1.png"])
+    
     background = []
     n = 50
     bx, by = 500, 300
-    init_x, init_y = -bx, -by
-    max_x, max_y = bx+xmax, by+ymax
+    bg_xmin, bg_ymin = -bx, -by
+    bg_xmax, bg_ymax = bx+xmax, by+ymax
     for x in range(n):
-        bg = Background([rd.randint(init_x, max_x), rd.randint(init_y, max_y)], "grass.png", gameSpeed)
+        bg = Background([rd.randint(bg_xmin, bg_xmax), rd.randint(bg_ymin, bg_ymax)], "grass.png", gameSpeed)
         background.append(bg)
     
     enemies = []
@@ -73,7 +78,7 @@ def main():
 
     while running:
         start = time.time()
-        screen.fill((120,120,120))
+        screen.fill((0,200,0))
 
         for event in pg.event.get():
             #Quit
@@ -83,22 +88,22 @@ def main():
             direct = checkMovement(direct, event)
         
         for i, bgy in enumerate(background):
-                background[i].move(direct)
+            background[i].move(direct)
 
-                if background[i].pos[0] < init_x:
-                    background[i].pos[0] = rd.randint(xmax, max_x)
-                    background[i].pos[1] = rd.randint(init_y, max_y)
-                if background[i].pos[0] > max_x:
-                    background[i].pos[0] = rd.randint(init_x, 0)
-                    background[i].pos[1] = rd.randint(init_y, max_y)
-                if background[i].pos[1] < init_y:
-                    background[i].pos[0] = rd.randint(init_x, max_x)
-                    background[i].pos[1] = rd.randint(ymax, max_y)
-                if background[i].pos[1] > max_y:
-                    background[i].pos[0] = rd.randint(init_x, max_x)
-                    background[i].pos[1] = rd.randint(init_y, 0)
+            if background[i].pos[0] < bg_xmin:
+                background[i].pos[0] = rd.randint(xmax, bg_xmax)
+                background[i].pos[1] = rd.randint(bg_ymin, bg_ymax)
+            if background[i].pos[0] > bg_xmax:
+                background[i].pos[0] = rd.randint(bg_xmin, 0)
+                background[i].pos[1] = rd.randint(bg_ymin, bg_ymax)
+            if background[i].pos[1] < bg_ymin:
+                background[i].pos[0] = rd.randint(bg_xmin, bg_xmax)
+                background[i].pos[1] = rd.randint(ymax, bg_ymax)
+            if background[i].pos[1] > bg_ymax:
+                background[i].pos[0] = rd.randint(bg_xmin, bg_xmax)
+                background[i].pos[1] = rd.randint(bg_ymin, 0)
 
-                background[i].draw(screen)
+            background[i].draw(screen)
         
         for i, obj in enumerate(enemies):
             enemies[i].move(direct)
@@ -111,6 +116,7 @@ def main():
         player.draw(screen)
 
         pg.display.update()
+        timer += 1
 
         #FPS Manager
         while(time.time()-start < 1/fpsLimit):
@@ -122,6 +128,5 @@ def main():
         # for i,obj in enumerate(background):
         #     for j,ob in enumerate(background):
         #         background[i].changeSpeed(gameSpeed)
-        timer += 1
 
 main()

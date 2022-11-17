@@ -12,7 +12,14 @@ class Object:
             self.pos[1],
             self.pos[1]+self.image.get_height()
             ]
-    
+
+    def moveHitbox(self):
+        self.hitbox = [self.pos[0],
+            self.pos[0]+self.image.get_width(),
+            self.pos[1],
+            self.pos[1]+self.image.get_height()
+            ]
+
     def loadImage(self, image):
         self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image))
 
@@ -34,11 +41,7 @@ class NonPlayerObject(Object):
         for direct in direction:
             m = self.movement[direct]
             self.pos[m[0]] += m[1]
-        self.hitbox = [self.pos[0],
-            self.pos[0]+self.image.get_width(),
-            self.pos[1],
-            self.pos[1]+self.image.get_height()
-            ]
+        self.moveHitbox()
     
     def changeSpeed(self, speed):
         self.speed = speed
