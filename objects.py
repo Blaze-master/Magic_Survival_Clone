@@ -59,14 +59,16 @@ class Enemy(NonPlayerObject):
         self.hp = hp
         self.dmg = dmg
         self.movementSpeed = speed
+        self.rad = (self.image.get_width()/2) + 10
+        self.center = self.pos+self.rad
     
     def mainMove(self, target):
-        center = np.array(target) - np.array([self.image.get_width()/2, self.image.get_height()/2])
+        center = np.array(target) - [self.image.get_width()/2, self.image.get_height()/2]
         dist = center - self.pos
         add = abs(dist[0]) + abs(dist[1])
-        dist *= self.movementSpeed
-        dist /= add
-        self.pos += dist
+        self.pos += dist*self.movementSpeed/add
+        self.moveHitbox()
+        self.center = self.pos+(self.image.get_width()/2)
 
 class Background(NonPlayerObject):
     def __init__(self, position, image, gSpeed):

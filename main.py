@@ -14,6 +14,9 @@ fpsLimit = 60
 trueSpeed = 300
 gameSpeed = trueSpeed/fpsLimit
 
+timer = 0
+ticks = 0
+
 xmax, ymax = 1160, 610
 xmin, ymin = 0, 0
 
@@ -48,6 +51,7 @@ def checkMovement(direct, event):
     except:
         pass
     return direct
+
 def spawnEnemy(img, hp, dmg, sp):
     x1, y1 = rd.randint(e_xmin, xmin), rd.randint(e_ymin, ymin)
     x2, y2 = rd.randint(xmax, e_xmax), rd.randint(ymax, e_ymax)
@@ -57,12 +61,21 @@ def spawnEnemy(img, hp, dmg, sp):
     y = y1 if y==1 else y2
     return Enemy([x, y], img, hp, dmg, sp, gameSpeed)
 
+def boxCollision(obj1, obj2):
+    X1 = obj1.hitbox[1][0] < obj2.hitbox[0][0]
+    X2 = obj1.hitbox[0][0] > obj2.hitbox[1][0]
+    Y1 = obj1.hitbox[1][1] < obj2.hitbox[0][1]
+    Y2 = obj1.hitbox[0][1] > obj2.hitbox[1][1]
+    col = not(X1 or X2) and not(Y1 or Y2)
+    return col
+
+def ballCollision(obj1, obj2):
+    distance = m.sqrt(m.pow(obj1.center[0]-obj2.center[0],2)+m.pow(obj1.center[1]-obj2.center[1],2))
+    return distance < obj1.rad
+
 def main():
     pg.init()
-    global gameSpeed
-
-    timer = 0
-    ticks = 0
+    global gameSpeed, timer, ticks
 
     screen = pg.display.set_mode((xmax, ymax))
     running = True
@@ -92,6 +105,7 @@ def main():
         start = time.time()
         screen.fill((0,200,0))
 
+        #Events o(n) can't do anything about this one's time complexity tho
         for event in pg.event.get():
             #Quit
             if event.type == pg.QUIT:
@@ -99,6 +113,7 @@ def main():
             
             direct = checkMovement(direct, event)
         
+        #Background movement o(n)
         for i, bgy in enumerate(background):
             background[i].move(direct)
 
@@ -117,6 +132,7 @@ def main():
 
             background[i].draw(screen)
         
+        #Enemy movement o(n)
         for i, obj in enumerate(enemies):
             #Enemy movement
             enemies[i].mainMove([xmax/2, ymax/2])
@@ -127,8 +143,19 @@ def main():
             oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
             if oor:
                 del enemies[i]
+        
+        #Collision detection o(n^2)
+        for i,enemy in enumerate(enemies):
+            for j,other in enumerate(enemies):
+                if(i!=j) and ballCollision(enemy, other):
+                    dist = enemy.center - other.center
+                    res = m.sqrt((dist[0]**2)+(dist[1]**2))
+                    factor = enemy.rad*2/res             
+                    move = dist*(factor-1)/5
+                    enemies[i].pos += move
 
-        #Tick rate Manager
+
+        #Tick rate Manager o(1) for now
         if timer % int(round(fpsLimit/10)) == 0 and timer != 0:
             ticks += 1
             if ticks%10 == 0:
@@ -152,3 +179,4 @@ def main():
         #         background[i].changeSpeed(gameSpeed)
 
 main()
+print(ticks)
