@@ -59,7 +59,7 @@ class Enemy(NonPlayerObject):
         self.hp = hp
         self.dmg = dmg
         self.movementSpeed = speed
-        self.rad = (self.image.get_width()/2) + 10
+        self.rad = (self.image.get_width()/2) + 20
         self.center = self.pos+self.rad
     
     def mainMove(self, target):

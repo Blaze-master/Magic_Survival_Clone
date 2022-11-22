@@ -14,19 +14,23 @@ fpsLimit = 60
 trueSpeed = 300
 gameSpeed = trueSpeed/fpsLimit
 
-timer = 0
-ticks = 0
-
+#View screen box
 xmax, ymax = 1160, 610
 xmin, ymin = 0, 0
 
+#Enemy spawn and render box
 ex, ey = 800, 500
 e_xmin, e_ymin = -ex, -ey
 e_xmax, e_ymax = ex+xmax, ey+ymax
 
+#Background render box
 bx, by = 500, 300
 bg_xmin, bg_ymin = -bx, -by
 bg_xmax, bg_ymax = bx+xmax, by+ymax
+
+#Metrics for recording passage of time
+timer = 0 #Frame counter
+ticks = 0 #1/10th of a second
 
 def checkMovement(direct, event):
     if event.type == pg.KEYDOWN:
@@ -79,23 +83,26 @@ def main():
 
     screen = pg.display.set_mode((xmax, ymax))
     running = True
-    pg.display.set_caption("Magic survival")
-
     playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
+    pg.display.set_caption("Magic survival")
+    pg.display.set_icon(playerImg)
+
+    #Spawn player
     ph = playerImg.get_height()
     pw = playerImg.get_width()
     player = Player([(xmax-pw)/2, (ymax-ph)/2], ["player1.png"])
     
+    #Spawn backgrounds
     background = []
     n = 50
     for x in range(n):
         bg = Background([rd.randint(bg_xmin, bg_xmax), rd.randint(bg_ymin, bg_ymax)], "grass.png", gameSpeed)
         background.append(bg)
     
+    #Spawn enemies
     enemies = []
-    n = 5
-    for x in range(0, n):
-        obj = Enemy([rd.randint(e_xmin, e_xmax), rd.randint(e_ymin, e_ymax)], ["enemy.png"], 200, 10, 4.0, gameSpeed)
+    n = 10
+    for x in range(n):
         obj = spawnEnemy(["enemy.png"], 200, 10, 4.0)
         enemies.append(obj)
 
@@ -117,6 +124,7 @@ def main():
         for i, bgy in enumerate(background):
             background[i].move(direct)
 
+            #Background respawns if out of range
             if background[i].pos[0] < bg_xmin:
                 background[i].pos[0] = rd.randint(xmax, bg_xmax)
                 background[i].pos[1] = rd.randint(bg_ymin, bg_ymax)
@@ -140,18 +148,19 @@ def main():
 
             enemies[i].draw(screen)
 
+            #Enemy despawns if out of range
             oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
             if oor:
                 del enemies[i]
         
-        #Collision detection o(n^2)
+        #Collision detection o(n^2) > o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
             for j,other in enumerate(enemies):
-                if(i!=j) and ballCollision(enemy, other):
+                if(i>j) and ballCollision(enemy, other): #changed i!=j to i>j to reduce time complexity
                     dist = enemy.center - other.center
                     res = m.sqrt((dist[0]**2)+(dist[1]**2))
                     factor = enemy.rad*2/res             
-                    move = dist*(factor-1)/5
+                    move = dist*(factor-1)/10
                     enemies[i].pos += move
 
 
@@ -167,7 +176,7 @@ def main():
         pg.display.update()
         timer += 1
 
-        #FPS Manager
+        #FPS Limiter
         while(time.time()-start < 1/fpsLimit):
             pass
         # loopTime = time.time()-start
