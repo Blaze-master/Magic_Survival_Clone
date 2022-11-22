@@ -8,6 +8,7 @@ import random as rd
 from objects import Player 
 from objects import Enemy
 from objects import Background
+from objects import Mana
 
 #Constants
 fpsLimit = 60
@@ -18,7 +19,7 @@ gameSpeed = trueSpeed/fpsLimit
 xmax, ymax = 1160, 610
 xmin, ymin = 0, 0
 
-#Enemy spawn and render box
+#Enemy render box
 ex, ey = 800, 500
 e_xmin, e_ymin = -ex, -ey
 e_xmax, e_ymax = ex+xmax, ey+ymax
@@ -27,6 +28,16 @@ e_xmax, e_ymax = ex+xmax, ey+ymax
 bx, by = 500, 300
 bg_xmin, bg_ymin = -bx, -by
 bg_xmax, bg_ymax = bx+xmax, by+ymax
+
+#Field item spawn and render box
+max_mana = 30 #To increase spawn rate, just increase max mana
+frx, fry = 580, 305
+fsx, fsy = 1160, 610
+fr_xmin, fr_ymin = -frx, -fry
+fr_xmax, fr_ymax = frx+xmax, fry+ymax
+fs_xmin, fs_ymin = -fsx, -fsy
+fs_xmax, fs_ymax = fsx+xmax, fsy+ymax
+item_left, item_up = True, True
 
 #Metrics for recording passage of time
 timer = 0 #Frame counter
@@ -60,10 +71,31 @@ def spawnEnemy(img, hp, dmg, sp):
     x1, y1 = rd.randint(e_xmin, xmin), rd.randint(e_ymin, ymin)
     x2, y2 = rd.randint(xmax, e_xmax), rd.randint(ymax, e_ymax)
     x = rd.randint(1,2)
-    x = x1 if x==1 else x2
     y = rd.randint(1,2)
-    y = y1 if y==1 else y2
+    z = rd.choice([True, False])
+    if z:
+        x = x1 if x==1 else x2
+        y = rd.randint(e_ymin, e_ymax)
+    else:
+        x = rd.randint(e_xmin, e_xmax)
+        y = y1 if y==1 else y2
     return Enemy([x, y], img, hp, dmg, sp, gameSpeed)
+
+def spawnMana():
+    rarity = rd.randint(1,100)
+    rarity = "small" if rarity < 91 else "medium" if rarity < 100 else "large"
+    x1, y1 = rd.randint(fs_xmin, fr_xmin), rd.randint(fs_ymin, fr_ymin)
+    x2, y2 = rd.randint(fr_xmax, fs_xmax), rd.randint(fr_ymax, fs_ymax)
+    x = rd.randint(1,2)
+    y = rd.randint(1,2)
+    z = rd.choice([True, False])
+    if z:
+        x = x1 if x==1 else x2
+        y = rd.randint(e_ymin, e_ymax)
+    else:
+        x = rd.randint(e_xmin, e_xmax)
+        y = y1 if y==1 else y2
+    return Mana([x, y], gameSpeed, rarity)
 
 def boxCollision(obj1, obj2):
     X1 = obj1.hitbox[1][0] < obj2.hitbox[0][0]
@@ -79,7 +111,7 @@ def ballCollision(obj1, obj2):
 
 def main():
     pg.init()
-    global gameSpeed, timer, ticks
+    global gameSpeed, timer, ticks, max_mana
 
     screen = pg.display.set_mode((xmax, ymax))
     running = True
@@ -101,16 +133,20 @@ def main():
     
     #Spawn enemies
     enemies = []
-    n = 10
+    n = 5
+    for x in range(n): 
+        enemies.append(spawnEnemy(["enemy.png"], 200, 10, 4.0))
+    
+    field_items = []
+    n = 20
     for x in range(n):
-        obj = spawnEnemy(["enemy.png"], 200, 10, 4.0)
-        enemies.append(obj)
+        field_items.append(spawnMana())
 
     direct = []
 
     while running:
         start = time.time()
-        screen.fill((0,200,0))
+        screen.fill((0,150,0))
 
         #Events o(n) can't do anything about this one's time complexity tho
         for event in pg.event.get():
@@ -121,7 +157,7 @@ def main():
             direct = checkMovement(direct, event)
         
         #Background movement o(n)
-        for i, bgy in enumerate(background):
+        for i, bg in enumerate(background):
             background[i].move(direct)
 
             #Background respawns if out of range
@@ -146,12 +182,29 @@ def main():
             enemies[i].mainMove([xmax/2, ymax/2])
             enemies[i].move(direct)
 
-            enemies[i].draw(screen)
-
             #Enemy despawns if out of range
             oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
             if oor:
                 del enemies[i]
+        
+        #Field item movement
+        for i, mana in enumerate(field_items):
+            field_items[i].move(direct)
+
+            if field_items[i].pos[0] < fs_xmin:
+                field_items[i].pos[0] = rd.randint(fr_xmax, fs_xmax)
+                field_items[i].pos[1] = rd.randint(fs_ymin, fs_ymax)
+            if field_items[i].pos[0] > fs_xmax:
+                field_items[i].pos[0] = rd.randint(fs_xmin, fr_xmin)
+                field_items[i].pos[1] = rd.randint(fs_ymin, fs_ymax)
+            if field_items[i].pos[1] < fs_ymin:
+                field_items[i].pos[0] = rd.randint(fs_xmin, fs_xmax)
+                field_items[i].pos[1] = rd.randint(fr_ymax, fs_ymax)
+            if field_items[i].pos[1] > fs_ymax:
+                field_items[i].pos[0] = rd.randint(fs_xmin, fs_xmax)
+                field_items[i].pos[1] = rd.randint(fs_ymin, fr_ymin)
+            
+            field_items[i].draw(screen)
         
         #Collision detection o(n^2) > o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
@@ -162,14 +215,17 @@ def main():
                     factor = enemy.rad*2/res             
                     move = dist*(factor-1)/10
                     enemies[i].pos += move
+            enemies[i].draw(screen)
 
 
         #Tick rate Manager o(1) for now
         if timer % int(round(fpsLimit/10)) == 0 and timer != 0:
             ticks += 1
             if ticks%10 == 0:
-                obj = spawnEnemy(["enemy.png"], 200, 10, 4.0)
-                enemies.append(obj)
+                enemies.append(spawnEnemy(["enemy.png"], 200, 10, 4.0))
+            mana_spawn = rd.randint(1, 5)
+            if mana_spawn < 5 and len(field_items) < max_mana:
+                field_items.append(spawnMana())
 
         player.draw(screen)
 

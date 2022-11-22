@@ -60,6 +60,7 @@ class Enemy(NonPlayerObject):
         self.dmg = dmg
         self.movementSpeed = speed
         self.rad = (self.image.get_width()/2) + 20
+        self.trueRad = self.image.get_width()/2
         self.center = self.pos+self.rad
     
     def mainMove(self, target):
@@ -73,6 +74,22 @@ class Enemy(NonPlayerObject):
 class Background(NonPlayerObject):
     def __init__(self, position, image, gSpeed):
         super().__init__(position, image, gSpeed)
+
+class Mana(NonPlayerObject):
+    def __init__(self, position, gSpeed, mana):
+        image = mana+"_mana.png"
+        self.mana = 100 if mana=="large" else 30 if mana=="medium" else 10
+        super().__init__(position, image, gSpeed)
+        self.rad = self.image.get_width()/2
+        self.center = self.pos+self.rad
+    
+    def attract(self, target):
+        center = np.array(target) - [self.image.get_width()/2, self.image.get_height()/2]
+        dist = center - self.pos
+        add = abs(dist[0]) + abs(dist[1])
+        self.pos += dist*self.movementSpeed/add
+        self.moveHitbox()
+        self.center = self.pos+(self.image.get_width()/2)
 
 if __name__ == "__main__":
     pass
