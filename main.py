@@ -31,6 +31,7 @@ bg_xmax, bg_ymax = bx+xmax, by+ymax
 
 #Field item spawn and render box
 max_mana = 30 #To increase spawn rate, just increase max mana
+max_chests = 3
 frx, fry = 580, 305
 fsx, fsy = 1160, 610
 fr_xmin, fr_ymin = -frx, -fry
@@ -67,35 +68,33 @@ def checkMovement(direct, event):
         pass
     return direct
 
-def spawnEnemy(img, hp, dmg, sp):
-    x1, y1 = rd.randint(e_xmin, xmin), rd.randint(e_ymin, ymin)
-    x2, y2 = rd.randint(xmax, e_xmax), rd.randint(ymax, e_ymax)
+def spawnObj(objType, props=[]):
+    if objType=="enemy":
+        xl0, yl0, xh0, yh0 = e_xmin, e_ymin, e_xmax, e_ymax
+        xl1, yl1, xh1, yh1 = xmin, ymin, xmax, ymax
+    if objType=="mana item" or "chest":
+        xl0, yl0, xh0, yh0 = fs_xmin, fs_ymin, fs_xmax, fs_ymax
+        xl1, yl1, xh1, yh1 = fr_xmin, fr_ymin, fr_xmax, fr_ymax
+        rarity = rd.randint(1,100)
+        rarity = "small" if rarity < 91 else "medium" if rarity < 100 else "large"
+    x1, y1 = rd.randint(xl0, xl1), rd.randint(yl0, yl1)
+    x2, y2 = rd.randint(xh1, xh0), rd.randint(yh1, yh0)
     x = rd.randint(1,2)
     y = rd.randint(1,2)
     z = rd.choice([True, False])
     if z:
         x = x1 if x==1 else x2
-        y = rd.randint(e_ymin, e_ymax)
+        y = rd.randint(yl0, yh0)
     else:
-        x = rd.randint(e_xmin, e_xmax)
+        x = rd.randint(xl0, xh0)
         y = y1 if y==1 else y2
-    return Enemy([x, y], img, hp, dmg, sp, gameSpeed)
-
-def spawnMana():
-    rarity = rd.randint(1,100)
-    rarity = "small" if rarity < 91 else "medium" if rarity < 100 else "large"
-    x1, y1 = rd.randint(fs_xmin, fr_xmin), rd.randint(fs_ymin, fr_ymin)
-    x2, y2 = rd.randint(fr_xmax, fs_xmax), rd.randint(fr_ymax, fs_ymax)
-    x = rd.randint(1,2)
-    y = rd.randint(1,2)
-    z = rd.choice([True, False])
-    if z:
-        x = x1 if x==1 else x2
-        y = rd.randint(e_ymin, e_ymax)
-    else:
-        x = rd.randint(e_xmin, e_xmax)
-        y = y1 if y==1 else y2
-    return Mana([x, y], gameSpeed, rarity)
+    pos = [x,y]
+    if objType=="enemy":
+        return Enemy(pos, props[0], props[1], props[2], props[3], gameSpeed)
+    if objType=="mana item":
+        return Mana(pos, rarity,gameSpeed)
+    if objType=="chest":
+        return Background(pos, "chest.png", gameSpeed)
 
 def boxCollision(obj1, obj2):
     X1 = obj1.hitbox[1][0] < obj2.hitbox[0][0]
@@ -135,12 +134,17 @@ def main():
     enemies = []
     n = 5
     for x in range(n): 
-        enemies.append(spawnEnemy(["enemy.png"], 200, 10, 4.0))
+        enemies.append(spawnObj("enemy", [["enemy.png"], 200, 10, 4.0]))
     
-    field_items = []
+    mana_items = []
     n = 20
     for x in range(n):
-        field_items.append(spawnMana())
+        mana_items.append(spawnObj("mana item"))
+    
+    chests = []
+    n = 3
+    for x in range(n):
+        chests.append(spawnObj("chest"))
 
     direct = []
 
@@ -161,18 +165,10 @@ def main():
             background[i].move(direct)
 
             #Background respawns if out of range
-            if background[i].pos[0] < bg_xmin:
-                background[i].pos[0] = rd.randint(xmax, bg_xmax)
-                background[i].pos[1] = rd.randint(bg_ymin, bg_ymax)
-            if background[i].pos[0] > bg_xmax:
-                background[i].pos[0] = rd.randint(bg_xmin, 0)
-                background[i].pos[1] = rd.randint(bg_ymin, bg_ymax)
-            if background[i].pos[1] < bg_ymin:
-                background[i].pos[0] = rd.randint(bg_xmin, bg_xmax)
-                background[i].pos[1] = rd.randint(ymax, bg_ymax)
-            if background[i].pos[1] > bg_ymax:
-                background[i].pos[0] = rd.randint(bg_xmin, bg_xmax)
-                background[i].pos[1] = rd.randint(bg_ymin, 0)
+            background[i].respawn(
+                [bg_xmin, bg_xmax, bg_ymin, bg_ymax],
+                [xmin, xmax, ymin, ymax]
+                )
 
             background[i].draw(screen)
         
@@ -187,24 +183,39 @@ def main():
             if oor:
                 del enemies[i]
         
-        #Field item movement
-        for i, mana in enumerate(field_items):
-            field_items[i].move(direct)
+        #Mana item movement
+        for i, manaObj in enumerate(mana_items):
+            mana_items[i].move(direct)
 
-            if field_items[i].pos[0] < fs_xmin:
-                field_items[i].pos[0] = rd.randint(fr_xmax, fs_xmax)
-                field_items[i].pos[1] = rd.randint(fs_ymin, fs_ymax)
-            if field_items[i].pos[0] > fs_xmax:
-                field_items[i].pos[0] = rd.randint(fs_xmin, fr_xmin)
-                field_items[i].pos[1] = rd.randint(fs_ymin, fs_ymax)
-            if field_items[i].pos[1] < fs_ymin:
-                field_items[i].pos[0] = rd.randint(fs_xmin, fs_xmax)
-                field_items[i].pos[1] = rd.randint(fr_ymax, fs_ymax)
-            if field_items[i].pos[1] > fs_ymax:
-                field_items[i].pos[0] = rd.randint(fs_xmin, fs_xmax)
-                field_items[i].pos[1] = rd.randint(fs_ymin, fr_ymin)
+            mana_items[i].respawn(
+                [fs_xmin, fs_xmax, fs_ymin, fs_ymax],
+                [fr_xmin, fr_xmax, fr_ymin, fr_ymax]
+                )
             
-            field_items[i].draw(screen)
+            dist = m.sqrt(m.pow(player.center[0]-mana_items[i].center[0],2)+m.pow(player.center[1]-mana_items[i].center[1],2))
+            if dist < player.pickupRad:
+                mana_items[i].attract(player.center)
+            
+            mana_items[i].draw(screen)
+
+            if boxCollision(player, mana_items[i]):
+                player.mana += manaObj.mana
+                del mana_items[i]
+        
+        #Chest item movement
+        for i,chest in enumerate(chests):
+            chests[i].move(direct)
+            
+            chests[i].draw(screen)
+
+            #Enemy despawns if out of range
+            oor = (chests[i].pos[0]<fs_xmin) or (chests[i].pos[0]>fs_xmax) or (chests[i].pos[1]<fs_ymin) or (chests[i].pos[1]>fs_ymax)
+
+            if boxCollision(player, chests[i]):
+                player.artifacts += 1
+                del chests[i]
+            elif oor:
+                del chests[i]
         
         #Collision detection o(n^2) > o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
@@ -222,10 +233,13 @@ def main():
         if timer % int(round(fpsLimit/10)) == 0 and timer != 0:
             ticks += 1
             if ticks%10 == 0:
-                enemies.append(spawnEnemy(["enemy.png"], 200, 10, 4.0))
+                enemies.append(spawnObj("enemy", [["enemy.png"], 200, 10, 4.0]))
             mana_spawn = rd.randint(1, 5)
-            if mana_spawn < 5 and len(field_items) < max_mana:
-                field_items.append(spawnMana())
+            if mana_spawn < 5 and len(mana_items) < max_mana:
+                mana_items.append(spawnObj("mana item"))
+            chest_spawn = rd.randint(1, 10)
+            if chest_spawn == 10 and len(chests) < max_chests:
+                chests.append(spawnObj("chest"))
 
         player.draw(screen)
 
@@ -242,6 +256,7 @@ def main():
         # for i,obj in enumerate(background):
         #     for j,ob in enumerate(background):
         #         background[i].changeSpeed(gameSpeed)
+    print(player.mana, player.artifacts)
 
 main()
 print(ticks)
