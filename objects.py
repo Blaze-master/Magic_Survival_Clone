@@ -114,5 +114,19 @@ class Mana(NonPlayerObject):
         self.moveHitbox()
         self.center = self.pos+(self.image.get_width()/2)
 
+class Projectile(NonPlayerObject):
+    def __init__(self, position, image, target, speed, dmg, gSpeed):
+        super().__init__(position, image, gSpeed)
+        self.target = target-self.pos
+        self.target /= m.sqrt(self.target[0]**2 + self.target[1]**2)
+        self.moveSpeed = speed
+        self.angle = m.atan(self.target[0]/self.target[1]) * (180/m.pi)
+        self.image = pg.transform.rotate(self.image, self.angle)
+        self.dmg = dmg
+    
+    def mainMove(self):
+        self.pos += self.target*self.moveSpeed
+        
+
 if __name__ == "__main__":
     pass

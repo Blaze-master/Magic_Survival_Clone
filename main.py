@@ -4,16 +4,19 @@ import math as m
 import time
 import os
 import random as rd
+import numpy as np
 
 from objects import Player 
 from objects import Enemy
 from objects import Background
 from objects import Mana
+from objects import Projectile
 
 #Constants
 fpsLimit = 60
 trueSpeed = 300
 gameSpeed = trueSpeed/fpsLimit
+score = 0
 
 #View screen box
 xmax, ymax = 1160, 610
@@ -38,7 +41,6 @@ fr_xmin, fr_ymin = -frx, -fry
 fr_xmax, fr_ymax = frx+xmax, fry+ymax
 fs_xmin, fs_ymin = -fsx, -fsy
 fs_xmax, fs_ymax = fsx+xmax, fsy+ymax
-item_left, item_up = True, True
 
 #Metrics for recording passage of time
 timer = 0 #Frame counter
@@ -95,6 +97,8 @@ def spawnObj(objType, props=[]):
         return Mana(pos, rarity,gameSpeed)
     if objType=="chest":
         return Background(pos, "chest.png", gameSpeed)
+    if objType=="projectile":
+        return Projectile(props[0], props[1], props[2], props[3], props[4], gameSpeed)
 
 def boxCollision(obj1, obj2):
     X1 = obj1.hitbox[1][0] < obj2.hitbox[0][0]
@@ -110,7 +114,7 @@ def ballCollision(obj1, obj2):
 
 def main():
     pg.init()
-    global gameSpeed, timer, ticks, max_mana
+    global gameSpeed, timer, ticks, max_mana, score
 
     screen = pg.display.set_mode((xmax, ymax))
     running = True
@@ -134,7 +138,7 @@ def main():
     enemies = []
     n = 5
     for x in range(n): 
-        enemies.append(spawnObj("enemy", [["enemy.png"], 200, 10, 4.0]))
+        enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, 4.0]))#Health, damage, speed
     
     mana_items = []
     n = 20
@@ -145,6 +149,8 @@ def main():
     n = 3
     for x in range(n):
         chests.append(spawnObj("chest"))
+    
+    projectiles = []
 
     direct = []
 
@@ -175,13 +181,14 @@ def main():
         #Enemy movement o(n)
         for i, obj in enumerate(enemies):
             #Enemy movement
-            enemies[i].mainMove([xmax/2, ymax/2])
+            enemies[i].mainMove(player.center)
             enemies[i].move(direct)
 
             #Enemy despawns if out of range
             oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
             if oor:
                 del enemies[i]
+                continue
         
         #Mana item movement
         for i, manaObj in enumerate(mana_items):
@@ -217,6 +224,29 @@ def main():
             elif oor:
                 del chests[i]
         
+        #Projectile movement
+        for i,bullet in enumerate(projectiles):
+            projectiles[i].move(direct)
+            projectiles[i].mainMove()
+            projectiles[i].draw(screen)
+            
+            #Projectile despawns if out of range
+            oor = (projectiles[i].pos[0]<e_xmin) or (projectiles[i].pos[0]>e_xmax) or (projectiles[i].pos[1]<e_ymin) or (projectiles[i].pos[1]>e_ymax)
+            if oor:
+                del projectiles[i]
+                continue
+
+            #Enemy hit
+            for j,enemy in enumerate(enemies):
+                if boxCollision(projectiles[i], enemy):
+                    enemies[j].hp -= bullet.dmg
+                    del projectiles[i]
+                    if enemies[j].hp <= 0:
+                        del enemies[j]
+                        score += 1
+                    break
+            
+        
         #Collision detection o(n^2) > o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
             for j,other in enumerate(enemies):
@@ -229,14 +259,29 @@ def main():
             enemies[i].draw(screen)
 
 
-        #Tick rate Manager o(1) for now
+        #Tick rate Manager
         if timer % int(round(fpsLimit/10)) == 0 and timer != 0:
             ticks += 1
-            if ticks%10 == 0:
-                enemies.append(spawnObj("enemy", [["enemy.png"], 200, 10, 4.0]))
+            #Projectile spawn o(n)
+            if ticks%5 == 0 and len(enemies)>0:
+                closest = []
+                for enemy in enemies:
+                    dist = enemy.center-player.center
+                    dist = m.sqrt(dist[0]**2 + dist[1]**2)
+                    closest.append(dist)
+                closest = np.array([closest]).argmin()
+                projectiles.append(spawnObj(
+                    "projectile", [player.center, "bullet.png", enemies[closest].center, 20, 10])#Speed, damage
+                )
+                pass
+            #Enemy spawn
+            if ticks%2 == 0:
+                enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, 4.0]))
+            #Mana spawn
             mana_spawn = rd.randint(1, 5)
             if mana_spawn < 5 and len(mana_items) < max_mana:
                 mana_items.append(spawnObj("mana item"))
+            #Chest spawn
             chest_spawn = rd.randint(1, 10)
             if chest_spawn == 10 and len(chests) < max_chests:
                 chests.append(spawnObj("chest"))
@@ -256,7 +301,9 @@ def main():
         # for i,obj in enumerate(background):
         #     for j,ob in enumerate(background):
         #         background[i].changeSpeed(gameSpeed)
-    print(player.mana, player.artifacts)
+    print("Mana collected : ", player.mana)
+    print("Artifacts collected : ", player.artifacts)
+    print("Enemies killed : ", score)
 
 main()
 print(ticks)
