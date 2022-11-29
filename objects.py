@@ -11,12 +11,16 @@ class Object:
         self.pos = np.array(position, dtype="float64")
         self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image))
         self.hitbox = np.array([self.pos,self.pos+[self.image.get_width(),self.image.get_height()]])
+        self.animType = {}
     
     def moveHitbox(self):
         self.hitbox = np.array([self.pos,self.pos+[self.image.get_width(),self.image.get_height()]])
 
     def loadImage(self, image):
         self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image))
+    
+    def runAnimation(self):
+        pass
 
     def draw(self, screen):
         screen.blit(self.image, self.pos)
@@ -32,10 +36,10 @@ class NonPlayerObject(Object):
             "down" : [1, -self.speed]
         }
     
-    def move(self, direction):
+    def move(self, direction, pSpeed):
         for direct in direction:
             m = self.movement[direct]
-            self.pos[m[0]] += m[1]
+            self.pos[m[0]] += m[1] * pSpeed
         self.moveHitbox()
         self.center = self.pos+(self.image.get_width()/2)
     
@@ -80,7 +84,7 @@ class Enemy(NonPlayerObject):
         super().__init__(position, images[0], gSpeed)
         self.hp = hp
         self.dmg = dmg
-        self.movementSpeed = speed
+        self.moveSpeed = speed
         self.rad = (self.image.get_width()/2) + 20
         self.trueRad = self.image.get_width()/2
         self.center = self.pos+self.rad
@@ -89,7 +93,7 @@ class Enemy(NonPlayerObject):
         center = np.array(target) - [self.image.get_width()/2, self.image.get_height()/2]
         dist = center - self.pos
         add = abs(dist[0]) + abs(dist[1])
-        self.pos += dist*self.movementSpeed/add
+        self.pos += dist*self.moveSpeed*self.speed/add
         self.moveHitbox()
 
 class Background(NonPlayerObject):
@@ -98,21 +102,27 @@ class Background(NonPlayerObject):
         self.center = self.pos + (self.image.get_width()/2)
 
 class Mana(NonPlayerObject):
-    def __init__(self, position, mana, gSpeed):
+    def __init__(self, position, mana, speed, gSpeed):
         image = mana+"_mana.png"
-        self.mana = 100 if mana=="large" else 30 if mana=="medium" else 10
+        self.mana = 150 if mana=="large" else 40 if mana=="medium" else 10
         super().__init__(position, image, gSpeed)
         self.rad = self.image.get_width()/2
         self.center = self.pos+self.rad
-        self.moveSpeed = 8
+        self.moveSpeed = speed
     
     def attract(self, target):
         center = np.array(target) - [self.image.get_width()/2, self.image.get_height()/2]
         dist = center - self.pos
         add = abs(dist[0]) + abs(dist[1])
-        self.pos += dist*self.moveSpeed/add
+        self.pos += dist*self.moveSpeed*self.speed/add
         self.moveHitbox()
         self.center = self.pos+(self.image.get_width()/2)
+    
+    def changeRarity(self):
+        rarity = rd.randint(1,100)
+        rarity = "small" if rarity < 81 else "medium" if rarity < 96 else "large"
+        self.loadImage(rarity+"_mana.png")
+        self.mana = 150 if rarity=="large" else 40 if rarity=="medium" else 10
 
 class Projectile(NonPlayerObject):
     def __init__(self, position, image, target, speed, dmg, gSpeed):
@@ -125,7 +135,7 @@ class Projectile(NonPlayerObject):
         self.dmg = dmg
     
     def mainMove(self):
-        self.pos += self.target*self.moveSpeed
+        self.pos += self.target*self.moveSpeed*self.speed
         
 
 if __name__ == "__main__":

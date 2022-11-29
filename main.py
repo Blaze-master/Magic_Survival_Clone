@@ -5,6 +5,7 @@ import time
 import os
 import random as rd
 import numpy as np
+from pygame import mixer
 
 from objects import Player 
 from objects import Enemy
@@ -16,6 +17,10 @@ from objects import Projectile
 fpsLimit = 60
 trueSpeed = 300
 gameSpeed = trueSpeed/fpsLimit
+playerSpeed = 1.0
+enemySpeed = 0.8
+attractSpeed = 1.6
+projectileSpeed = 4.0 
 score = 0
 
 #View screen box
@@ -78,7 +83,7 @@ def spawnObj(objType, props=[]):
         xl0, yl0, xh0, yh0 = fs_xmin, fs_ymin, fs_xmax, fs_ymax
         xl1, yl1, xh1, yh1 = fr_xmin, fr_ymin, fr_xmax, fr_ymax
         rarity = rd.randint(1,100)
-        rarity = "small" if rarity < 91 else "medium" if rarity < 100 else "large"
+        rarity = "small" if rarity < 51 else "medium" if rarity < 91 else "large"
     x1, y1 = rd.randint(xl0, xl1), rd.randint(yl0, yl1)
     x2, y2 = rd.randint(xh1, xh0), rd.randint(yh1, yh0)
     x = rd.randint(1,2)
@@ -94,7 +99,7 @@ def spawnObj(objType, props=[]):
     if objType=="enemy":
         return Enemy(pos, props[0], props[1], props[2], props[3], gameSpeed)
     if objType=="mana item":
-        return Mana(pos, rarity,gameSpeed)
+        return Mana(pos, rarity, props[0], gameSpeed)
     if objType=="chest":
         return Background(pos, "chest.png", gameSpeed)
     if objType=="projectile":
@@ -118,6 +123,10 @@ def main():
 
     screen = pg.display.set_mode((xmax, ymax))
     running = True
+
+    mixer.music.load("Blizzard.mp3")
+    mixer.music.play(-1)
+
     playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
     pg.display.set_caption("Magic survival")
     pg.display.set_icon(playerImg)
@@ -138,12 +147,12 @@ def main():
     enemies = []
     n = 5
     for x in range(n): 
-        enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, 4.0]))#Health, damage, speed
+        enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, enemySpeed]))#Health, damage, speed
     
     mana_items = []
     n = 20
     for x in range(n):
-        mana_items.append(spawnObj("mana item"))
+        mana_items.append(spawnObj("mana item", [attractSpeed]))
     
     chests = []
     n = 3
@@ -168,7 +177,7 @@ def main():
         
         #Background movement o(n)
         for i, bg in enumerate(background):
-            background[i].move(direct)
+            background[i].move(direct, playerSpeed)
 
             #Background respawns if out of range
             background[i].respawn(
@@ -182,7 +191,7 @@ def main():
         for i, obj in enumerate(enemies):
             #Enemy movement
             enemies[i].mainMove(player.center)
-            enemies[i].move(direct)
+            enemies[i].move(direct, playerSpeed)
 
             #Enemy despawns if out of range
             oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
@@ -192,12 +201,16 @@ def main():
         
         #Mana item movement
         for i, manaObj in enumerate(mana_items):
-            mana_items[i].move(direct)
-
-            mana_items[i].respawn(
-                [fs_xmin, fs_xmax, fs_ymin, fs_ymax],
-                [fr_xmin, fr_xmax, fr_ymin, fr_ymax]
-                )
+            mana_items[i].move(direct, playerSpeed)
+            
+            #If oor, respawn and change rarity
+            oor = (mana_items[i].pos[0]<fs_xmin) or (mana_items[i].pos[0]>fs_xmax) or (mana_items[i].pos[1]<fs_ymin) or (mana_items[i].pos[1]>fs_ymax)
+            if oor:
+                mana_items[i].changeRarity
+                mana_items[i].respawn(
+                    [fs_xmin, fs_xmax, fs_ymin, fs_ymax],
+                    [fr_xmin, fr_xmax, fr_ymin, fr_ymax]
+                    )
             
             dist = m.sqrt(m.pow(player.center[0]-mana_items[i].center[0],2)+m.pow(player.center[1]-mana_items[i].center[1],2))
             if dist < player.pickupRad:
@@ -211,11 +224,11 @@ def main():
         
         #Chest item movement
         for i,chest in enumerate(chests):
-            chests[i].move(direct)
+            chests[i].move(direct, playerSpeed)
             
             chests[i].draw(screen)
 
-            #Enemy despawns if out of range
+            #Chest despawns if out of range
             oor = (chests[i].pos[0]<fs_xmin) or (chests[i].pos[0]>fs_xmax) or (chests[i].pos[1]<fs_ymin) or (chests[i].pos[1]>fs_ymax)
 
             if boxCollision(player, chests[i]):
@@ -226,7 +239,7 @@ def main():
         
         #Projectile movement
         for i,bullet in enumerate(projectiles):
-            projectiles[i].move(direct)
+            projectiles[i].move(direct, playerSpeed)
             projectiles[i].mainMove()
             projectiles[i].draw(screen)
             
@@ -263,7 +276,7 @@ def main():
         if timer % int(round(fpsLimit/10)) == 0 and timer != 0:
             ticks += 1
             #Projectile spawn o(n)
-            if ticks%5 == 0 and len(enemies)>0:
+            if ticks%10 == 0 and len(enemies)>0:
                 closest = []
                 for enemy in enemies:
                     dist = enemy.center-player.center
@@ -271,16 +284,16 @@ def main():
                     closest.append(dist)
                 closest = np.array([closest]).argmin()
                 projectiles.append(spawnObj(
-                    "projectile", [player.center, "bullet.png", enemies[closest].center, 20, 10])#Speed, damage
+                    "projectile", [player.center, "bullet.png", enemies[closest].center, projectileSpeed, 10])#Speed, damage
                 )
                 pass
             #Enemy spawn
-            if ticks%2 == 0:
-                enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, 4.0]))
+            if ticks%5 == 0:
+                enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, enemySpeed]))
             #Mana spawn
             mana_spawn = rd.randint(1, 5)
             if mana_spawn < 5 and len(mana_items) < max_mana:
-                mana_items.append(spawnObj("mana item"))
+                mana_items.append(spawnObj("mana item", [attractSpeed]))
             #Chest spawn
             chest_spawn = rd.randint(1, 10)
             if chest_spawn == 10 and len(chests) < max_chests:
@@ -294,16 +307,22 @@ def main():
         #FPS Limiter
         while(time.time()-start < 1/fpsLimit):
             pass
-        # loopTime = time.time()-start
-        # gameSpeed = trueSpeed*loopTime*3
-        # for i,obj in enumerate(enemies):
-        #     enemies[i].changeSpeed(gameSpeed)
-        # for i,obj in enumerate(background):
-        #     for j,ob in enumerate(background):
-        #         background[i].changeSpeed(gameSpeed)
-    print("Mana collected : ", player.mana)
-    print("Artifacts collected : ", player.artifacts)
-    print("Enemies killed : ", score)
+        loopTime = time.time()-start
+        loopTime = loopTime if loopTime >= 1/fpsLimit else 1/fpsLimit
+        gameSpeed = trueSpeed*loopTime
+        for i,obj in enumerate(enemies):
+            enemies[i].changeSpeed(gameSpeed)
+        for i,obj in enumerate(background):
+            background[i].changeSpeed(gameSpeed)
+        for i,obj in enumerate(mana_items):
+            mana_items[i].changeSpeed(gameSpeed)
+        for i,obj in enumerate(chests):
+            chests[i].changeSpeed(gameSpeed)
+        for i,obj in enumerate(projectiles):
+            projectiles[i].changeSpeed(gameSpeed)
+    print("Mana collected :", player.mana)
+    print("Artifacts collected :", player.artifacts)
+    print("Enemies killed :", score)
 
 main()
-print(ticks)
+print("Time :", ticks/10, "secs")
