@@ -128,6 +128,7 @@ def main():
     # mixer.music.play(-1)
 
     keyMove = False
+    pause = False
 
     playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
     pg.display.set_caption("Magic survival")
@@ -176,147 +177,151 @@ def main():
                 running = False
             if keyMove:
                 direct = checkMovement(direct, event)
-        if not keyMove:
-            mousePos = np.array(pg.mouse.get_pos(), dtype="float64")
-            mousePos -= player.center
-            sqrSum = mousePos[0]**2 + mousePos[1]**2
-            sqrSum = sqrSum if sqrSum != 0 else 1
-            magn = sqrSum**0.5
-            mouseDir = mousePos/magn
-        
-        #Background movement o(n)
-        for i, bg in enumerate(background):
-            if keyMove: background[i].move(direct, playerSpeed) 
-            else: background[i].mouseMove(mouseDir, playerSpeed)
-
-            #Background respawns if out of range
-            background[i].respawn(
-                [bg_xmin, bg_xmax, bg_ymin, bg_ymax],
-                [xmin, xmax, ymin, ymax]
-                )
-
-            background[i].draw(screen)
-        
-        #Enemy movement o(n)
-        for i, obj in enumerate(enemies):
-            #Enemy movement
-            enemies[i].mainMove(player.center)
-            if keyMove: enemies[i].move(direct, playerSpeed)
-            else: enemies[i].mouseMove(mouseDir, playerSpeed)
-
-            #Enemy despawns if out of range
-            oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
-            if oor:
-                del enemies[i]
-                continue
-        
-        #Mana item movement
-        for i, manaObj in enumerate(mana_items):
-            if keyMove: mana_items[i].move(direct, playerSpeed)
-            else: mana_items[i].mouseMove(mouseDir, playerSpeed)
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    pause = not pause
+        if not pause:
+            if not keyMove:
+                mousePos = np.array(pg.mouse.get_pos(), dtype="float64")
+                mousePos -= player.center
+                sqrSum = mousePos[0]**2 + mousePos[1]**2
+                sqrSum = sqrSum if sqrSum != 0 else 1
+                magn = sqrSum**0.5
+                mouseDir = mousePos/magn
             
-            #If oor, respawn and change rarity
-            oor = (mana_items[i].pos[0]<fs_xmin) or (mana_items[i].pos[0]>fs_xmax) or (mana_items[i].pos[1]<fs_ymin) or (mana_items[i].pos[1]>fs_ymax)
-            if oor:
-                mana_items[i].changeRarity
-                mana_items[i].respawn(
-                    [fs_xmin, fs_xmax, fs_ymin, fs_ymax],
-                    [fr_xmin, fr_xmax, fr_ymin, fr_ymax]
+            #Background movement o(n)
+            for i, bg in enumerate(background):
+                if keyMove: background[i].move(direct, playerSpeed) 
+                else: background[i].mouseMove(mouseDir, playerSpeed)
+
+                #Background respawns if out of range
+                background[i].respawn(
+                    [bg_xmin, bg_xmax, bg_ymin, bg_ymax],
+                    [xmin, xmax, ymin, ymax]
                     )
-            
-            dist = m.sqrt(m.pow(player.center[0]-mana_items[i].center[0],2)+m.pow(player.center[1]-mana_items[i].center[1],2))
-            if dist < player.pickupRad:
-                mana_items[i].attract(player.center)
-            
-            mana_items[i].draw(screen)
 
-            if boxCollision(player, mana_items[i]):
-                player.mana += manaObj.mana
-                del mana_items[i]
-        
-        #Chest item movement
-        for i,chest in enumerate(chests):
-            if keyMove: chests[i].move(direct, playerSpeed)
-            else: chests[i].mouseMove(mouseDir, playerSpeed)
+                background[i].draw(screen)
             
-            chests[i].draw(screen)
+            #Enemy movement o(n)
+            for i, obj in enumerate(enemies):
+                #Enemy movement
+                enemies[i].mainMove(player.center)
+                if keyMove: enemies[i].move(direct, playerSpeed)
+                else: enemies[i].mouseMove(mouseDir, playerSpeed)
 
-            #Chest despawns if out of range
-            oor = (chests[i].pos[0]<fs_xmin) or (chests[i].pos[0]>fs_xmax) or (chests[i].pos[1]<fs_ymin) or (chests[i].pos[1]>fs_ymax)
-
-            if boxCollision(player, chests[i]):
-                player.artifacts += 1
-                del chests[i]
-            elif oor:
-                del chests[i]
-        
-        #Projectile movement
-        for i,bullet in enumerate(projectiles):
-            if keyMove: projectiles[i].move(direct, playerSpeed)
-            else: projectiles[i].mouseMove(mouseDir, playerSpeed)
-            projectiles[i].mainMove()
-            projectiles[i].draw(screen)
+                #Enemy despawns if out of range
+                oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
+                if oor:
+                    del enemies[i]
+                    continue
             
-            #Projectile despawns if out of range
-            oor = (projectiles[i].pos[0]<e_xmin) or (projectiles[i].pos[0]>e_xmax) or (projectiles[i].pos[1]<e_ymin) or (projectiles[i].pos[1]>e_ymax)
-            if oor:
-                del projectiles[i]
-                continue
+            #Mana item movement
+            for i, manaObj in enumerate(mana_items):
+                if keyMove: mana_items[i].move(direct, playerSpeed)
+                else: mana_items[i].mouseMove(mouseDir, playerSpeed)
+                
+                #If oor, respawn and change rarity
+                oor = (mana_items[i].pos[0]<fs_xmin) or (mana_items[i].pos[0]>fs_xmax) or (mana_items[i].pos[1]<fs_ymin) or (mana_items[i].pos[1]>fs_ymax)
+                if oor:
+                    mana_items[i].changeRarity
+                    mana_items[i].respawn(
+                        [fs_xmin, fs_xmax, fs_ymin, fs_ymax],
+                        [fr_xmin, fr_xmax, fr_ymin, fr_ymax]
+                        )
+                
+                dist = m.sqrt(m.pow(player.center[0]-mana_items[i].center[0],2)+m.pow(player.center[1]-mana_items[i].center[1],2))
+                if dist < player.pickupRad:
+                    mana_items[i].attract(player.center)
+                
+                mana_items[i].draw(screen)
 
-            #Enemy hit
-            for j,enemy in enumerate(enemies):
-                if boxCollision(projectiles[i], enemy):
-                    enemies[j].hp -= bullet.dmg
+                if boxCollision(player, mana_items[i]):
+                    player.mana += manaObj.mana
+                    del mana_items[i]
+            
+            #Chest item movement
+            for i,chest in enumerate(chests):
+                if keyMove: chests[i].move(direct, playerSpeed)
+                else: chests[i].mouseMove(mouseDir, playerSpeed)
+                
+                chests[i].draw(screen)
+
+                #Chest despawns if out of range
+                oor = (chests[i].pos[0]<fs_xmin) or (chests[i].pos[0]>fs_xmax) or (chests[i].pos[1]<fs_ymin) or (chests[i].pos[1]>fs_ymax)
+
+                if boxCollision(player, chests[i]):
+                    player.artifacts += 1
+                    del chests[i]
+                elif oor:
+                    del chests[i]
+            
+            #Projectile movement
+            for i,bullet in enumerate(projectiles):
+                if keyMove: projectiles[i].move(direct, playerSpeed)
+                else: projectiles[i].mouseMove(mouseDir, playerSpeed)
+                projectiles[i].mainMove()
+                projectiles[i].draw(screen)
+                
+                #Projectile despawns if out of range
+                oor = (projectiles[i].pos[0]<e_xmin) or (projectiles[i].pos[0]>e_xmax) or (projectiles[i].pos[1]<e_ymin) or (projectiles[i].pos[1]>e_ymax)
+                if oor:
                     del projectiles[i]
-                    if enemies[j].hp <= 0:
-                        del enemies[j]
-                        score += 1
-                    break
+                    continue
+
+                #Enemy hit
+                for j,enemy in enumerate(enemies):
+                    if boxCollision(projectiles[i], enemy):
+                        enemies[j].hp -= bullet.dmg
+                        del projectiles[i]
+                        if enemies[j].hp <= 0:
+                            del enemies[j]
+                            score += 1
+                        break
+                
             
-        
-        #Collision detection o(n^2) > o(n?) i.e sumtorial ~28-33% faster
-        for i,enemy in enumerate(enemies):
-            for j,other in enumerate(enemies):
-                if(i>j) and ballCollision(enemy, other): #changed i!=j to i>j to reduce time complexity
-                    dist = enemy.center - other.center
-                    res = m.sqrt((dist[0]**2)+(dist[1]**2))
-                    factor = enemy.rad*2/res             
-                    move = dist*(factor-1)/10
-                    enemies[i].pos += move
-            enemies[i].draw(screen)
+            #Collision detection o(n^2) > o(n?) i.e sumtorial ~28-33% faster
+            for i,enemy in enumerate(enemies):
+                for j,other in enumerate(enemies):
+                    if(i>j) and ballCollision(enemy, other): #changed i!=j to i>j to reduce time complexity
+                        dist = enemy.center - other.center
+                        res = m.sqrt((dist[0]**2)+(dist[1]**2))
+                        factor = enemy.rad*2/res             
+                        move = dist*(factor-1)/10
+                        enemies[i].pos += move
+                enemies[i].draw(screen)
 
 
-        #Tick rate Manager
-        if timer % int(round(fpsLimit/10)) == 0 and timer != 0:
-            ticks += 1
-            #Projectile spawn o(n)
-            if ticks%10 == 0 and len(enemies)>0:
-                closest = []
-                for enemy in enemies:
-                    dist = enemy.center-player.center
-                    dist = m.sqrt(dist[0]**2 + dist[1]**2)
-                    closest.append(dist)
-                closest = np.array([closest]).argmin()
-                projectiles.append(spawnObj(
-                    "projectile", [player.center, "bullet.png", enemies[closest].center, projectileSpeed, 10])#Speed, damage
-                )
-                pass
-            #Enemy spawn
-            if ticks%3 == 0:
-                enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, enemySpeed]))
-            #Mana spawn
-            mana_spawn = rd.randint(1, 5)
-            if mana_spawn < 5 and len(mana_items) < max_mana:
-                mana_items.append(spawnObj("mana item", [attractSpeed]))
-            #Chest spawn
-            chest_spawn = rd.randint(1, 10)
-            if chest_spawn == 10 and len(chests) < max_chests:
-                chests.append(spawnObj("chest"))
+            #Tick rate Manager
+            if timer % int(round(fpsLimit/10)) == 0 and timer != 0:
+                ticks += 1
+                #Projectile spawn o(n)
+                if ticks%10 == 0 and len(enemies)>0:
+                    closest = []
+                    for enemy in enemies:
+                        dist = enemy.center-player.center
+                        dist = m.sqrt(dist[0]**2 + dist[1]**2)
+                        closest.append(dist)
+                    closest = np.array([closest]).argmin()
+                    projectiles.append(spawnObj(
+                        "projectile", [player.center, "bullet.png", enemies[closest].center, projectileSpeed, 10])#Speed, damage
+                    )
+                    pass
+                #Enemy spawn
+                if ticks%3 == 0:
+                    enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, enemySpeed]))
+                #Mana spawn
+                mana_spawn = rd.randint(1, 5)
+                if mana_spawn < 5 and len(mana_items) < max_mana:
+                    mana_items.append(spawnObj("mana item", [attractSpeed]))
+                #Chest spawn
+                chest_spawn = rd.randint(1, 10)
+                if chest_spawn == 10 and len(chests) < max_chests:
+                    chests.append(spawnObj("chest"))
 
-        player.draw(screen)
+            player.draw(screen)
 
-        pg.display.update()
-        timer += 1
+            pg.display.update()
+            timer += 1
 
         #FPS Limiter
         while(time.time()-start < 1/fpsLimit):
