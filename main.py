@@ -124,8 +124,8 @@ def main():
     screen = pg.display.set_mode((xmax, ymax))
     running = True
 
-    mixer.music.load("Blizzard.mp3")
-    mixer.music.play(-1)
+    # mixer.music.load("Blizzard.mp3")
+    # mixer.music.play(-1)
 
     playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
     pg.display.set_caption("Magic survival")
@@ -174,10 +174,15 @@ def main():
                 running = False
             
             direct = checkMovement(direct, event)
+        mousePos = np.array(pg.mouse.get_pos(), dtype="float64")
+        mousePos -= player.center
+        sqrSum = mousePos[0]**2 + mousePos[1]**2
+        mousePos = ((mousePos**2)/sqrSum) * (mousePos/abs(mousePos))
         
         #Background movement o(n)
         for i, bg in enumerate(background):
             background[i].move(direct, playerSpeed)
+            background[i].mouseMove(mousePos, playerSpeed)
 
             #Background respawns if out of range
             background[i].respawn(
@@ -192,6 +197,7 @@ def main():
             #Enemy movement
             enemies[i].mainMove(player.center)
             enemies[i].move(direct, playerSpeed)
+            enemies[i].mouseMove(mousePos, playerSpeed)
 
             #Enemy despawns if out of range
             oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
@@ -202,6 +208,7 @@ def main():
         #Mana item movement
         for i, manaObj in enumerate(mana_items):
             mana_items[i].move(direct, playerSpeed)
+            mana_items[i].mouseMove(mousePos, playerSpeed)
             
             #If oor, respawn and change rarity
             oor = (mana_items[i].pos[0]<fs_xmin) or (mana_items[i].pos[0]>fs_xmax) or (mana_items[i].pos[1]<fs_ymin) or (mana_items[i].pos[1]>fs_ymax)
@@ -225,6 +232,7 @@ def main():
         #Chest item movement
         for i,chest in enumerate(chests):
             chests[i].move(direct, playerSpeed)
+            chests[i].mouseMove(mousePos, playerSpeed)
             
             chests[i].draw(screen)
 
@@ -240,6 +248,7 @@ def main():
         #Projectile movement
         for i,bullet in enumerate(projectiles):
             projectiles[i].move(direct, playerSpeed)
+            projectiles[i].mouseMove(mousePos, playerSpeed)
             projectiles[i].mainMove()
             projectiles[i].draw(screen)
             
@@ -288,7 +297,7 @@ def main():
                 )
                 pass
             #Enemy spawn
-            if ticks%5 == 0:
+            if ticks%3 == 0:
                 enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, enemySpeed]))
             #Mana spawn
             mana_spawn = rd.randint(1, 5)

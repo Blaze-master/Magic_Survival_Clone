@@ -37,10 +37,18 @@ class NonPlayerObject(Object):
         }
     
     def move(self, direction, pSpeed):
+        con1 = ("left" in direction and "up" in direction) or ("left" in direction and "down" in direction)
+        con2 = ("right" in direction and "up" in direction) or ("right" in direction and "down" in direction)
+        con = con1 or con2
+        coeff = (2**0.5)/2 if con else 1
         for direct in direction:
             m = self.movement[direct]
-            self.pos[m[0]] += m[1] * pSpeed
+            self.pos[m[0]] += m[1] * pSpeed * coeff
         self.moveHitbox()
+        self.center = self.pos+(self.image.get_width()/2)
+    
+    def mouseMove(self, direction, pSpeed):
+        self.pos -= direction * pSpeed * self.speed
         self.center = self.pos+(self.image.get_width()/2)
     
     def changeSpeed(self, speed):
