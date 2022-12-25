@@ -50,6 +50,7 @@ class NonPlayerObject(Object):
     def mouseMove(self, direction, pSpeed):
         self.pos -= direction * pSpeed * self.speed
         self.center = self.pos+(self.image.get_width()/2)
+        self.moveHitbox()
     
     def changeSpeed(self, speed):
         self.speed = speed

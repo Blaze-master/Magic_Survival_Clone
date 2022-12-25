@@ -127,6 +127,8 @@ def main():
     # mixer.music.load("Blizzard.mp3")
     # mixer.music.play(-1)
 
+    keyMove = False
+
     playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
     pg.display.set_caption("Magic survival")
     pg.display.set_icon(playerImg)
@@ -172,17 +174,20 @@ def main():
             #Quit
             if event.type == pg.QUIT:
                 running = False
-            
-            direct = checkMovement(direct, event)
-        mousePos = np.array(pg.mouse.get_pos(), dtype="float64")
-        mousePos -= player.center
-        sqrSum = mousePos[0]**2 + mousePos[1]**2
-        mousePos = ((mousePos**2)/sqrSum) * (mousePos/abs(mousePos))
+            if keyMove:
+                direct = checkMovement(direct, event)
+        if not keyMove:
+            mousePos = np.array(pg.mouse.get_pos(), dtype="float64")
+            mousePos -= player.center
+            sqrSum = mousePos[0]**2 + mousePos[1]**2
+            sqrSum = sqrSum if sqrSum != 0 else 1
+            magn = sqrSum**0.5
+            mouseDir = mousePos/magn
         
         #Background movement o(n)
         for i, bg in enumerate(background):
-            background[i].move(direct, playerSpeed)
-            background[i].mouseMove(mousePos, playerSpeed)
+            if keyMove: background[i].move(direct, playerSpeed) 
+            else: background[i].mouseMove(mouseDir, playerSpeed)
 
             #Background respawns if out of range
             background[i].respawn(
@@ -196,8 +201,8 @@ def main():
         for i, obj in enumerate(enemies):
             #Enemy movement
             enemies[i].mainMove(player.center)
-            enemies[i].move(direct, playerSpeed)
-            enemies[i].mouseMove(mousePos, playerSpeed)
+            if keyMove: enemies[i].move(direct, playerSpeed)
+            else: enemies[i].mouseMove(mouseDir, playerSpeed)
 
             #Enemy despawns if out of range
             oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
@@ -207,8 +212,8 @@ def main():
         
         #Mana item movement
         for i, manaObj in enumerate(mana_items):
-            mana_items[i].move(direct, playerSpeed)
-            mana_items[i].mouseMove(mousePos, playerSpeed)
+            if keyMove: mana_items[i].move(direct, playerSpeed)
+            else: mana_items[i].mouseMove(mouseDir, playerSpeed)
             
             #If oor, respawn and change rarity
             oor = (mana_items[i].pos[0]<fs_xmin) or (mana_items[i].pos[0]>fs_xmax) or (mana_items[i].pos[1]<fs_ymin) or (mana_items[i].pos[1]>fs_ymax)
@@ -231,8 +236,8 @@ def main():
         
         #Chest item movement
         for i,chest in enumerate(chests):
-            chests[i].move(direct, playerSpeed)
-            chests[i].mouseMove(mousePos, playerSpeed)
+            if keyMove: chests[i].move(direct, playerSpeed)
+            else: chests[i].mouseMove(mouseDir, playerSpeed)
             
             chests[i].draw(screen)
 
@@ -247,8 +252,8 @@ def main():
         
         #Projectile movement
         for i,bullet in enumerate(projectiles):
-            projectiles[i].move(direct, playerSpeed)
-            projectiles[i].mouseMove(mousePos, playerSpeed)
+            if keyMove: projectiles[i].move(direct, playerSpeed)
+            else: projectiles[i].mouseMove(mouseDir, playerSpeed)
             projectiles[i].mainMove()
             projectiles[i].draw(screen)
             
