@@ -15,7 +15,7 @@ from objects import Projectile
 
 #Constants
 fpsLimit = 60
-trueSpeed = 300
+trueSpeed = 300 #300
 gameSpeed = trueSpeed/fpsLimit
 playerSpeed = 1.0
 enemySpeed = 0.8
@@ -113,6 +113,9 @@ def boxCollision(obj1, obj2):
     col = not(X1 or X2) and not(Y1 or Y2)
     return col
 
+def inBox(point, box):
+    return (point[0]>box[0][0] and point[0]<box[1][0]) and (point[1]>box[0][1] and point[1]<box[1][1])
+
 def ballCollision(obj1, obj2):
     distance = m.sqrt(m.pow(obj1.center[0]-obj2.center[0],2)+m.pow(obj1.center[1]-obj2.center[1],2))
     return distance < obj1.rad
@@ -127,7 +130,7 @@ def main():
     # mixer.music.load("Blizzard.mp3")
     # mixer.music.play(-1)
 
-    keyMove = False
+    keyMove = True
     pause = False
 
     playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
@@ -211,7 +214,7 @@ def main():
 
                 #Enemy despawns if out of range
                 oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
-                if oor:
+                if not inBox(enemies[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
                     del enemies[i]
                     continue
             
@@ -222,7 +225,7 @@ def main():
                 
                 #If oor, respawn and change rarity
                 oor = (mana_items[i].pos[0]<fs_xmin) or (mana_items[i].pos[0]>fs_xmax) or (mana_items[i].pos[1]<fs_ymin) or (mana_items[i].pos[1]>fs_ymax)
-                if oor:
+                if not inBox(mana_items[i].center, [[fs_xmin, fs_ymin],[fs_xmax, fs_ymax]]):
                     mana_items[i].changeRarity
                     mana_items[i].respawn(
                         [fs_xmin, fs_xmax, fs_ymin, fs_ymax],
@@ -252,7 +255,7 @@ def main():
                 if boxCollision(player, chests[i]):
                     player.artifacts += 1
                     del chests[i]
-                elif oor:
+                elif not inBox(chests[i].center, [[fs_xmin, fs_ymin],[fs_xmax, fs_ymax]]):
                     del chests[i]
             
             #Projectile movement
@@ -286,7 +289,7 @@ def main():
                         dist = enemy.center - other.center
                         res = m.sqrt((dist[0]**2)+(dist[1]**2))
                         factor = enemy.rad*2/res             
-                        move = dist*(factor-1)/10
+                        move = dist*(factor-1)/10 #10
                         enemies[i].pos += move
                 enemies[i].draw(screen)
 
@@ -307,7 +310,7 @@ def main():
                     )
                     pass
                 #Enemy spawn
-                if ticks%3 == 0:
+                if ticks%1 == 0:
                     enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, enemySpeed]))
                 #Mana spawn
                 mana_spawn = rd.randint(1, 5)

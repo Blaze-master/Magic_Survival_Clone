@@ -81,6 +81,7 @@ class Player(Object):
         super().__init__(position, images[0])
         self.center = self.pos + [self.image.get_width()/2, self.image.get_height()/2]
         self.pickupRad = (self.image.get_height()/2) + 50
+        self.rad = self.image.get_width()/2
         self.hp = 100
         self.mana = 0
         self.artifacts = 0
@@ -94,7 +95,7 @@ class Enemy(NonPlayerObject):
         self.hp = hp
         self.dmg = dmg
         self.moveSpeed = speed
-        self.rad = (self.image.get_width()/2) + 20
+        self.rad = (self.image.get_width()/2) + 10 #10, slightly bigger than the sprite's actual radius
         self.trueRad = self.image.get_width()/2
         self.center = self.pos+self.rad
     
