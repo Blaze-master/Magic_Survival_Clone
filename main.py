@@ -50,6 +50,7 @@ fs_xmax, fs_ymax = fsx+xmax, fsy+ymax
 #Metrics for recording passage of time
 timer = 0 #Frame counter
 ticks = 0 #1/10th of a second
+dmgTimer = 0
 
 def checkMovement(direct, event):
     if event.type == pg.KEYDOWN:
@@ -122,7 +123,7 @@ def ballCollision(obj1, obj2):
 
 def main():
     pg.init()
-    global gameSpeed, timer, ticks, max_mana, score
+    global gameSpeed, timer, ticks, max_mana, score, dmgTimer
 
     screen = pg.display.set_mode((xmax, ymax))
     running = True
@@ -141,6 +142,7 @@ def main():
     ph = playerImg.get_height()
     pw = playerImg.get_width()
     player = Player([(xmax-pw)/2, (ymax-ph)/2], ["player1.png"])
+    plyrDmgCd = 0
     
     #Spawn backgrounds
     background = []
@@ -166,6 +168,7 @@ def main():
         chests.append(spawnObj("chest"))
     
     projectiles = []
+    projTimer = [1.0, 1] #[cooldown(secs), amount spawned]
 
     direct = []
 
@@ -295,22 +298,12 @@ def main():
 
 
             #Tick rate Manager
-            if timer % int(round(fpsLimit/10)) == 0 and timer != 0:
+            tmp = int(round((trueSpeed/gameSpeed)/10))
+            tmp = tmp if tmp>0 else 1
+            if timer % tmp == 0 and timer != 0:
                 ticks += 1
-                #Projectile spawn o(n)
-                if ticks%10 == 0 and len(enemies)>0:
-                    closest = []
-                    for enemy in enemies:
-                        dist = enemy.center-player.center
-                        dist = m.sqrt(dist[0]**2 + dist[1]**2)
-                        closest.append(dist)
-                    closest = np.array([closest]).argmin()
-                    projectiles.append(spawnObj(
-                        "projectile", [player.center, "bullet.png", enemies[closest].center, projectileSpeed, 10])#Speed, damage
-                    )
-                    pass
                 #Enemy spawn
-                if ticks%1 == 0:
+                if ticks%2 == 0:
                     enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, enemySpeed]))
                 #Mana spawn
                 mana_spawn = rd.randint(1, 5)
@@ -320,6 +313,31 @@ def main():
                 chest_spawn = rd.randint(1, 10)
                 if chest_spawn == 10 and len(chests) < max_chests:
                     chests.append(spawnObj("chest"))
+                #Player damage
+                if plyrDmgCd<ticks:
+                    for enemy in enemies:
+                        if ballCollision(player, enemy):
+                            player.hp -= enemy.dmg
+                            plyrDmgCd = ticks + 5
+                            if player.hp <= 0:
+                                running = False
+                            break
+
+            #Attack cooldowns
+            dmgTimer += gameSpeed/trueSpeed
+            if dmgTimer >= projTimer[0]*projTimer[1]:
+                #Projectile spawn o(n)
+                if len(enemies)>0:
+                    closest = []
+                    for enemy in enemies:
+                        dist = enemy.center-player.center
+                        dist = m.sqrt(dist[0]**2 + dist[1]**2)
+                        closest.append(dist)
+                    closest = np.array([closest]).argmin()
+                    projectiles.append(spawnObj(
+                        "projectile", [player.center, "bullet.png", enemies[closest].center, projectileSpeed, 10])#Speed, damage
+                    )
+                projTimer[1] += 1
 
             player.draw(screen)
 
@@ -345,6 +363,7 @@ def main():
     print("Mana collected :", player.mana)
     print("Artifacts collected :", player.artifacts)
     print("Enemies killed :", score)
+    print("Player health: ", player.hp)
 
 main()
 print("Time :", ticks/10, "secs")
