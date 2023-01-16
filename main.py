@@ -14,7 +14,7 @@ from objects import Mana
 from objects import Projectile
 
 #Constants
-fpsLimit = 60
+fpsLimit = 60 #60
 trueSpeed = 300 #300
 gameSpeed = trueSpeed/fpsLimit
 playerSpeed = 1.0
@@ -131,8 +131,9 @@ def main():
     # mixer.music.load("Blizzard.mp3")
     # mixer.music.play(-1)
 
-    keyMove = True
+    keyMove = False
     pause = False
+    mouseMove = not keyMove
 
     playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
     pg.display.set_caption("Magic survival")
@@ -168,7 +169,7 @@ def main():
         chests.append(spawnObj("chest"))
     
     projectiles = []
-    projTimer = [1.0, 1] #[cooldown(secs), amount spawned]
+    projTimer = [1.0, 0] #[cooldown(secs), time till next attack]
 
     direct = []
 
@@ -183,9 +184,13 @@ def main():
                 running = False
             if keyMove:
                 direct = checkMovement(direct, event)
+            elif not pause:
+                if event.type == pg.MOUSEBUTTONDOWN:
+                    mouseMove = not mouseMove
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_SPACE:
                     pause = not pause
+
         if not pause:
             if not keyMove:
                 mousePos = np.array(pg.mouse.get_pos(), dtype="float64")
@@ -194,11 +199,12 @@ def main():
                 sqrSum = sqrSum if sqrSum != 0 else 1
                 magn = sqrSum**0.5
                 mouseDir = mousePos/magn
+
             
             #Background movement o(n)
             for i, bg in enumerate(background):
                 if keyMove: background[i].move(direct, playerSpeed) 
-                else: background[i].mouseMove(mouseDir, playerSpeed)
+                if mouseMove: background[i].mouseMove(mouseDir, playerSpeed)
 
                 #Background respawns if out of range
                 background[i].respawn(
@@ -211,9 +217,9 @@ def main():
             #Enemy movement o(n)
             for i, obj in enumerate(enemies):
                 #Enemy movement
-                enemies[i].mainMove(player.center)
                 if keyMove: enemies[i].move(direct, playerSpeed)
-                else: enemies[i].mouseMove(mouseDir, playerSpeed)
+                if mouseMove: enemies[i].mouseMove(mouseDir, playerSpeed)
+                enemies[i].mainMove(player.center)
 
                 #Enemy despawns if out of range
                 oor = (enemies[i].pos[0]<e_xmin) or (enemies[i].pos[0]>e_xmax) or (enemies[i].pos[1]<e_ymin) or (enemies[i].pos[1]>e_ymax)
@@ -224,7 +230,7 @@ def main():
             #Mana item movement
             for i, manaObj in enumerate(mana_items):
                 if keyMove: mana_items[i].move(direct, playerSpeed)
-                else: mana_items[i].mouseMove(mouseDir, playerSpeed)
+                if mouseMove: mana_items[i].mouseMove(mouseDir, playerSpeed)
                 
                 #If oor, respawn and change rarity
                 oor = (mana_items[i].pos[0]<fs_xmin) or (mana_items[i].pos[0]>fs_xmax) or (mana_items[i].pos[1]<fs_ymin) or (mana_items[i].pos[1]>fs_ymax)
@@ -248,7 +254,7 @@ def main():
             #Chest item movement
             for i,chest in enumerate(chests):
                 if keyMove: chests[i].move(direct, playerSpeed)
-                else: chests[i].mouseMove(mouseDir, playerSpeed)
+                if mouseMove: chests[i].mouseMove(mouseDir, playerSpeed)
                 
                 chests[i].draw(screen)
 
@@ -264,7 +270,7 @@ def main():
             #Projectile movement
             for i,bullet in enumerate(projectiles):
                 if keyMove: projectiles[i].move(direct, playerSpeed)
-                else: projectiles[i].mouseMove(mouseDir, playerSpeed)
+                if mouseMove: projectiles[i].mouseMove(mouseDir, playerSpeed)
                 projectiles[i].mainMove()
                 projectiles[i].draw(screen)
                 
@@ -325,7 +331,7 @@ def main():
 
             #Attack cooldowns
             dmgTimer += gameSpeed/trueSpeed
-            if dmgTimer >= projTimer[0]*projTimer[1]:
+            if dmgTimer >= projTimer[1]:
                 #Projectile spawn o(n)
                 if len(enemies)>0:
                     closest = []
@@ -337,7 +343,7 @@ def main():
                     projectiles.append(spawnObj(
                         "projectile", [player.center, "bullet.png", enemies[closest].center, projectileSpeed, 10])#Speed, damage
                     )
-                projTimer[1] += 1
+                projTimer[1] = dmgTimer + projTimer[0]
 
             player.draw(screen)
 

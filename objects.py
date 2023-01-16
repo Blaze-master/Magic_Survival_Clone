@@ -1,9 +1,7 @@
-from tkinter import Y
 import pygame as pg
 import math as m
 import numpy as np
 import random as rd
-import time
 import os
 
 class Object:
@@ -15,6 +13,7 @@ class Object:
     
     def moveHitbox(self):
         self.hitbox = np.array([self.pos,self.pos+[self.image.get_width(),self.image.get_height()]])
+        self.center = self.pos+[self.image.get_width()/2, self.image.get_height()/2]
 
     def loadImage(self, image):
         self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image))
@@ -45,7 +44,6 @@ class NonPlayerObject(Object):
             m = self.movement[direct]
             self.pos[m[0]] += m[1] * pSpeed * coeff
         self.moveHitbox()
-        self.center = self.pos+(self.image.get_width()/2)
     
     def mouseMove(self, direction, pSpeed):
         self.pos -= direction * pSpeed * self.speed
@@ -146,6 +144,7 @@ class Projectile(NonPlayerObject):
     
     def mainMove(self):
         self.pos += self.target*self.moveSpeed*self.speed
+        self.moveHitbox()
         
 
 if __name__ == "__main__":
