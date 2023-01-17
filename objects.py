@@ -81,7 +81,11 @@ class Player(Object):
         self.pickupRad = (self.image.get_height()/2) + 50
         self.rad = self.image.get_width()/2
         self.hp = 100
-        self.mana = 0
+        self.mana = {
+            "amt" : 0,
+            "lvl" : 1,
+            "cap" : 50
+        }
         self.artifacts = 0
 
     def move(self, direction):
@@ -96,6 +100,7 @@ class Enemy(NonPlayerObject):
         self.rad = (self.image.get_width()/2) + 10 #10, slightly bigger than the sprite's actual radius
         self.trueRad = self.image.get_width()/2
         self.center = self.pos+self.rad
+        self.mana = 2
     
     def mainMove(self, target):
         center = np.array(target) - [self.image.get_width()/2, self.image.get_height()/2]
@@ -130,7 +135,7 @@ class Mana(NonPlayerObject):
         rarity = rd.randint(1,100)
         rarity = "small" if rarity < 81 else "medium" if rarity < 96 else "large"
         self.loadImage(rarity+"_mana.png")
-        self.mana = 150 if rarity=="large" else 40 if rarity=="medium" else 10
+        self.mana = 100 if rarity=="large" else 25 if rarity=="medium" else 10
 
 class Projectile(NonPlayerObject):
     def __init__(self, position, image, target, speed, dmg, gSpeed):
@@ -144,6 +149,19 @@ class Projectile(NonPlayerObject):
     
     def mainMove(self):
         self.pos += self.target*self.moveSpeed*self.speed
+        self.moveHitbox()
+
+class Bar(Object):
+    def __init__(self, position, image, maxLen, height):
+        super().__init__(position, image)
+        self.max = maxLen
+        self.height = height
+        self.image = pg.transform.scale(self.image, (1, self.height))
+    
+    def setLength(self, amount, limit):
+        length = self.max*(amount/limit)
+        length = length if length>0 else 1
+        self.image = pg.transform.scale(self.image, (length, self.height))
         self.moveHitbox()
         
 

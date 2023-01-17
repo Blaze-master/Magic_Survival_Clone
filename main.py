@@ -12,6 +12,7 @@ from objects import Enemy
 from objects import Background
 from objects import Mana
 from objects import Projectile
+from objects import Bar
 
 #Constants
 fpsLimit = 60 #60
@@ -168,6 +169,8 @@ def main():
     for x in range(n):
         chests.append(spawnObj("chest"))
     
+    manaBar = Bar([0,0], "mana_bar.png", xmax, 10)
+    
     projectiles = []
     projTimer = [1.0, 0] #[cooldown(secs), time till next attack]
 
@@ -248,7 +251,8 @@ def main():
                 mana_items[i].draw(screen)
 
                 if boxCollision(player, mana_items[i]):
-                    player.mana += manaObj.mana
+                    player.mana["amt"] += manaObj.mana
+                    manaBar.setLength(player.mana["amt"], player.mana["cap"])
                     del mana_items[i]
             
             #Chest item movement
@@ -286,6 +290,8 @@ def main():
                         enemies[j].hp -= bullet.dmg
                         del projectiles[i]
                         if enemies[j].hp <= 0:
+                            player.mana["amt"] += enemies[j].mana
+                            manaBar.setLength(player.mana["amt"], player.mana["cap"])
                             del enemies[j]
                             score += 1
                         break
@@ -345,7 +351,14 @@ def main():
                     )
                 projTimer[1] = dmgTimer + projTimer[0]
 
+            if player.mana["amt"] >= player.mana["cap"]:
+                player.mana["amt"] -= player.mana["cap"]
+                player.mana["lvl"] += 1
+                player.mana["cap"] += 50
+                manaBar.setLength(player.mana["amt"], player.mana["cap"])
+            
             player.draw(screen)
+            manaBar.draw(screen)
 
             pg.display.update()
             timer += 1
@@ -366,7 +379,7 @@ def main():
             chests[i].changeSpeed(gameSpeed)
         for i,obj in enumerate(projectiles):
             projectiles[i].changeSpeed(gameSpeed)
-    print("Mana collected :", player.mana)
+    print("Mana level :", player.mana["lvl"])
     print("Artifacts collected :", player.artifacts)
     print("Enemies killed :", score)
     print("Player health: ", player.hp)
