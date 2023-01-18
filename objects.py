@@ -117,7 +117,7 @@ class Background(NonPlayerObject):
 class Mana(NonPlayerObject):
     def __init__(self, position, mana, speed, gSpeed):
         image = mana+"_mana.png"
-        self.mana = 150 if mana=="large" else 40 if mana=="medium" else 10
+        self.mana = 60 if mana=="large" else 20 if mana=="medium" else 10
         super().__init__(position, image, gSpeed)
         self.rad = self.image.get_width()/2
         self.center = self.pos+self.rad

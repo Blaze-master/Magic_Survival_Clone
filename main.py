@@ -21,7 +21,7 @@ gameSpeed = trueSpeed/fpsLimit
 playerSpeed = 1.0
 enemySpeed = 0.8
 attractSpeed = 1.6
-projectileSpeed = 4.0 
+projSpeed = 4.0 
 score = 0
 
 #View screen box
@@ -51,7 +51,6 @@ fs_xmax, fs_ymax = fsx+xmax, fsy+ymax
 #Metrics for recording passage of time
 timer = 0 #Frame counter
 ticks = 0 #1/10th of a second
-dmgTimer = 0
 
 def checkMovement(direct, event):
     if event.type == pg.KEYDOWN:
@@ -172,7 +171,24 @@ def main():
     manaBar = Bar([0,0], "mana_bar.png", xmax, 10)
     
     projectiles = []
-    projTimer = [1.0, 0] #[cooldown(secs), time till next attack]
+    projBaseDmg = 10
+    projDmgMultiplier = 1
+    projDmg = projBaseDmg * projDmgMultiplier
+    projBaseCd = 1.0
+    projCdMultiplier = 1.0
+    projTimer = [0, projBaseCd*projCdMultiplier] #[time since last attack, cooldown]
+    projUpgrades = [
+        [0, -0.1],
+        [0.1, 0],
+        [0, -0.1],
+        [0.1, 0],
+        [0, -0.1],
+        [0.1, 0],
+        [0, -0.1],
+        [0.1, 0],
+        [0, -0.1],
+        [0.1, 0]
+    ]
 
     direct = []
 
@@ -297,10 +313,10 @@ def main():
                         break
                 
             
-            #Collision detection o(n^2) > o(n?) i.e sumtorial ~28-33% faster
+            #Enemy Collision detection o(n^2) > o(n?) i.e sumtorial ~28-33% faster
             for i,enemy in enumerate(enemies):
                 for j,other in enumerate(enemies):
-                    if(i>j) and ballCollision(enemy, other): #changed i!=j to i>j to reduce time complexity
+                    if(i>j) and ballCollision(enemy, other): #changed i!=j to i>j to cut execution time in half
                         dist = enemy.center - other.center
                         res = m.sqrt((dist[0]**2)+(dist[1]**2))
                         factor = enemy.rad*2/res             
@@ -314,18 +330,22 @@ def main():
             tmp = tmp if tmp>0 else 1
             if timer % tmp == 0 and timer != 0:
                 ticks += 1
+
                 #Enemy spawn
                 if ticks%2 == 0:
                     enemies.append(spawnObj("enemy", [["enemy.png"], 10, 10, enemySpeed]))
+
                 #Mana spawn
                 mana_spawn = rd.randint(1, 5)
                 if mana_spawn < 5 and len(mana_items) < max_mana:
                     mana_items.append(spawnObj("mana item", [attractSpeed]))
+
                 #Chest spawn
                 chest_spawn = rd.randint(1, 10)
                 if chest_spawn == 10 and len(chests) < max_chests:
                     chests.append(spawnObj("chest"))
-                #Player damage
+                
+                #Player damage (takes damage only every 5 ticks)
                 if plyrDmgCd<ticks:
                     for enemy in enemies:
                         if ballCollision(player, enemy):
@@ -336,8 +356,8 @@ def main():
                             break
 
             #Attack cooldowns
-            dmgTimer += gameSpeed/trueSpeed
-            if dmgTimer >= projTimer[1]:
+            projTimer[0] += gameSpeed/trueSpeed
+            if projTimer[0] >= projTimer[1]:
                 #Projectile spawn o(n)
                 if len(enemies)>0:
                     closest = []
@@ -347,14 +367,23 @@ def main():
                         closest.append(dist)
                     closest = np.array([closest]).argmin()
                     projectiles.append(spawnObj(
-                        "projectile", [player.center, "bullet.png", enemies[closest].center, projectileSpeed, 10])#Speed, damage
+                        "projectile", [player.center, "bullet.png", enemies[closest].center, projSpeed, projDmg])#Speed, damage
                     )
-                projTimer[1] = dmgTimer + projTimer[0]
+                projTimer[0] = 0
 
+            #Mana level up
             if player.mana["amt"] >= player.mana["cap"]:
                 player.mana["amt"] -= player.mana["cap"]
                 player.mana["lvl"] += 1
                 player.mana["cap"] += 50
+
+                if len(projUpgrades) > 0:
+                    upgrade = projUpgrades.pop(0)
+                    projDmgMultiplier += upgrade[0]
+                    projCdMultiplier += upgrade[1]                
+                    projDmg = projBaseDmg * projDmgMultiplier
+                    projTimer[1] = projBaseCd*projCdMultiplier
+
                 manaBar.setLength(player.mana["amt"], player.mana["cap"])
             
             player.draw(screen)
@@ -382,7 +411,9 @@ def main():
     print("Mana level :", player.mana["lvl"])
     print("Artifacts collected :", player.artifacts)
     print("Enemies killed :", score)
-    print("Player health: ", player.hp)
+    print("Player health :", player.hp)
+    print("Projectile damage :", projDmg)
+    print("Projectile cooldown :", projTimer[1])
 
 main()
 print("Time :", ticks/10, "secs")
