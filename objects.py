@@ -165,5 +165,4 @@ class Bar(Object):
         self.moveHitbox()
         
 
-if __name__ == "__main__":
-    pass
+if __name__ == "__main__": pass
