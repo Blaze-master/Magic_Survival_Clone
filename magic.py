@@ -18,4 +18,7 @@ projUpgrades = [
     [0.1, 0]
 ]
 
+#Passive
+intelligence = [0, 0]
+
 if __name__ == "__main__": pass

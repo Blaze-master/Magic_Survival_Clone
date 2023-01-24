@@ -64,6 +64,8 @@ for x in range(n):
     chests.append(spawnObj("chest"))
 
 manaBar = Bar([0,0], "mana_bar.png", xmax, 10)
+healthBar = Bar((player.pos+np.array([-3, 50])), "health_bar.png", 30, 4)
+healthBar.setLength(player.hp, 100)
 
 projectiles = []
 
@@ -71,7 +73,7 @@ direct = []
 
 while running:
     start = time.time()
-    screen.fill((0,150,0))
+    screen.fill((0,70,0)) #0,150,0
 
     #Events o(n) can't do anything about this one's time complexity tho
     for event in pg.event.get():
@@ -115,14 +117,14 @@ while running:
             #Enemy movement
             if keyMove: enemies[i].move(direct, playerSpeed)
             if mouseMove: enemies[i].mouseMove(mouseDir, playerSpeed)
-            enemies[i].mainMove(player.center)
+            enemies[i].mainMove(np.array(pg.mouse.get_pos()))
 
             #Enemy despawns if out of range
             if not inBox(enemies[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
                 del enemies[i]
                 continue
         
-        #Mana item movement
+        #Mana item movement o(n)
         for i, manaObj in enumerate(mana_items):
             if keyMove: mana_items[i].move(direct, playerSpeed)
             if mouseMove: mana_items[i].mouseMove(mouseDir, playerSpeed)
@@ -135,8 +137,7 @@ while running:
                     [fr_xmin, fr_xmax, fr_ymin, fr_ymax]
                     )
             
-            dist = m.sqrt(m.pow(player.center[0]-mana_items[i].center[0],2)+m.pow(player.center[1]-mana_items[i].center[1],2))
-            if dist < player.pickupRad:
+            if inRange(player.pickupRad, player.center, mana_items[i].center):
                 mana_items[i].attract(player.center)
             
             mana_items[i].draw(screen)
@@ -146,7 +147,7 @@ while running:
                 manaBar.setLength(player.mana["amt"], player.mana["cap"])
                 del mana_items[i]
         
-        #Chest item movement
+        #Chest item movement o(n)
         for i,chest in enumerate(chests):
             if keyMove: chests[i].move(direct, playerSpeed)
             if mouseMove: chests[i].mouseMove(mouseDir, playerSpeed)
@@ -160,7 +161,7 @@ while running:
             elif not inBox(chests[i].center, [[fs_xmin, fs_ymin],[fs_xmax, fs_ymax]]):
                 del chests[i]
         
-        #Projectile movement
+        #Projectile movement o(n^2)
         for i,bullet in enumerate(projectiles):
             if keyMove: projectiles[i].move(direct, playerSpeed)
             if mouseMove: projectiles[i].mouseMove(mouseDir, playerSpeed)
@@ -185,14 +186,14 @@ while running:
                     break
             
         
-        #Enemy Collision detection o(n^2) > o(n?) i.e sumtorial ~28-33% faster
+        #Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
             for j,other in enumerate(enemies):
                 if(i>j) and ballCollision(enemy, other): #changed i!=j to i>j to cut execution time in half
                     dist = enemy.center - other.center
                     res = m.sqrt((dist[0]**2)+(dist[1]**2))
                     factor = enemy.rad*2/res             
-                    move = dist*(factor-1)/10 #10
+                    move = dist*(factor-1)/2 #10
                     enemies[i].pos += move
             enemies[i].draw(screen)
 
@@ -222,6 +223,7 @@ while running:
                 for enemy in enemies:
                     if ballCollision(player, enemy):
                         player.hp -= enemy.dmg
+                        healthBar.setLength(player.hp, 100)
                         plyrDmgCd = ticks + 5
                         if player.hp <= 0:
                             running = False
@@ -239,7 +241,7 @@ while running:
                     closest.append(dist)
                 closest = np.array([closest]).argmin()
                 projectiles.append(spawnObj(
-                    "projectile", [player.center, "bullet.png", enemies[closest].center, projSpeed, projDmg])#Speed, damage
+                    "projectile", [player.center, "bullet.png", enemies[closest].center, projSpeed, projDmg])
                 )
             projTimer[0] = 0
 
@@ -260,6 +262,7 @@ while running:
         
         player.draw(screen)
         manaBar.draw(screen)
+        healthBar.draw(screen)
 
         pg.display.update()
         timer += 1
@@ -270,6 +273,7 @@ while running:
         loopTime = time.time()-start
         loopTime = loopTime if loopTime >= 1/fpsLimit else 1/fpsLimit
         gameSpeed = trueSpeed*loopTime
+        # o(n) operations
         for i,obj in enumerate(enemies):
             enemies[i].changeSpeed(gameSpeed)
         for i,obj in enumerate(background):

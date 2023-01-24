@@ -97,7 +97,7 @@ class Enemy(NonPlayerObject):
         self.hp = hp
         self.dmg = dmg
         self.moveSpeed = speed
-        self.rad = (self.image.get_width()/2) + 10 #10, slightly bigger than the sprite's actual radius
+        self.rad = (self.image.get_width()/2) + -5 #10, slightly bigger than the sprite's actual radius
         self.trueRad = self.image.get_width()/2
         self.center = self.pos+self.rad
         self.mana = 2

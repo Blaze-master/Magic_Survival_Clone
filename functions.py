@@ -33,7 +33,7 @@ def spawnObj(objType, props=[]):
         xl0, yl0, xh0, yh0 = fs_xmin, fs_ymin, fs_xmax, fs_ymax
         xl1, yl1, xh1, yh1 = fr_xmin, fr_ymin, fr_xmax, fr_ymax
         rarity = rd.randint(1,100)
-        rarity = "small" if rarity < 51 else "medium" if rarity < 91 else "large"
+        rarity = "small" if rarity < 61 else "medium" if rarity < 91 else "large"
     x1, y1 = rd.randint(xl0, xl1), rd.randint(yl0, yl1)
     x2, y2 = rd.randint(xh1, xh0), rd.randint(yh1, yh0)
     x = rd.randint(1,2)
@@ -68,6 +68,11 @@ def inBox(point, box):
 
 def ballCollision(obj1, obj2):
     distance = m.sqrt(m.pow(obj1.center[0]-obj2.center[0],2)+m.pow(obj1.center[1]-obj2.center[1],2))
-    return distance < obj1.rad
+    return distance < (obj1.rad+obj2.rad)
+
+def inRange(rad, cen1, cen2):
+    distance = m.sqrt(m.pow(cen1[0]-cen2[0],2)+m.pow(cen1[1]-cen2[1],2))
+    return distance < rad
+
 
 if __name__ == "__main__": pass
