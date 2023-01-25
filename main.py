@@ -68,6 +68,7 @@ healthBar = Bar((player.pos+np.array([-3, 50])), "health_bar.png", 30, 4)
 healthBar.setLength(player.hp, 100)
 
 projectiles = []
+lavazones = []
 
 direct = []
 
@@ -184,6 +185,25 @@ while running:
                         del enemies[j]
                         score += 1
                     break
+        
+        lavaIntervalTimer[0] += gameSpeed/trueSpeed
+        for i,lavazone in enumerate(lavazones):
+            if keyMove: lavazones[i].move(direct, playerSpeed)
+            if mouseMove: lavazones[i].mouseMove(mouseDir, playerSpeed)
+            lavazones[i].draw(screen)
+
+            lavazones[i].duration -= gameSpeed/trueSpeed
+            if lavazone.duration <= 0:
+                del lavazones[i]
+            if lavaIntervalTimer[0] >= lavaIntervalTimer[1]:
+                for j,enemy in enumerate(enemies):
+                    if ballCollision(lavazones[i], enemy):
+                        enemies[j].hp -= lavazone.dmg
+                        if enemies[j].hp <= 0:
+                            player.mana["amt"] += enemies[j].mana
+                            manaBar.setLength(player.mana["amt"], player.mana["cap"])
+                            del enemies[j]
+                            score += 1
             
         
         #Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
@@ -244,6 +264,15 @@ while running:
                     "projectile", [player.center, "bullet.png", enemies[closest].center, projSpeed, projDmg])
                 )
             projTimer[0] = 0
+        lavaCdTimer[0] += gameSpeed/trueSpeed
+        if lavaCdTimer[0] >= lavaCdTimer[1]:
+            pos = (np.random.rand(2) * [xmax, ymax]) -100
+            lavazones.append(spawnObj(
+                "lavazone", [pos, ["lava_zone.png"], lavaDmg, lavaSize, lavaDuration]
+            ))
+            lavaCdTimer[0] = 0
+        
+
 
         #Mana level up
         if player.mana["amt"] >= player.mana["cap"]:
@@ -251,12 +280,12 @@ while running:
             player.mana["lvl"] += 1
             player.mana["cap"] += 50
 
-            if len(projUpgrades) > 0:
-                upgrade = projUpgrades.pop(0)
-                projDmgMultiplier += upgrade[0]
-                projCdMultiplier += upgrade[1]                
+            if projLevel < 8:
+                projDmgMultiplier += projUpgrades[projLevel-1][0]
+                projCdMultiplier += projUpgrades[projLevel-1][1]
+                projLevel += 1
                 projDmg = projBaseDmg * projDmgMultiplier
-                projTimer[1] = projBaseCd*projCdMultiplier
+                projTimer[1] = projBaseCd/projCdMultiplier
 
             manaBar.setLength(player.mana["amt"], player.mana["cap"])
         

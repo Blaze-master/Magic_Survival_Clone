@@ -54,6 +54,8 @@ def spawnObj(objType, props=[]):
         return Background(pos, "chest.png", gameSpeed)
     if objType=="projectile":
         return Projectile(props[0], props[1], props[2], props[3], props[4], gameSpeed)
+    if objType=="lavazone":
+        return Zone(props[0], props[1], props[2], props[3], props[4], gameSpeed)
 
 def boxCollision(obj1, obj2):
     X1 = obj1.hitbox[1][0] < obj2.hitbox[0][0]

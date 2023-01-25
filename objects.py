@@ -163,6 +163,15 @@ class Bar(Object):
         length = length if length>0 else 1
         self.image = pg.transform.scale(self.image, (length, self.height))
         self.moveHitbox()
+
+class Zone(NonPlayerObject):
+    def __init__(self, position, images, dmg, diameter, duration, gSpeed):
+        super().__init__(position, images[0], gSpeed)
+        self.image = pg.transform.scale(self.image, (diameter, diameter))
+        self.rad = diameter/2
+        self.dmg = dmg
+        self.duration = duration
+        self.moveHitbox()
         
 
 if __name__ == "__main__": pass
