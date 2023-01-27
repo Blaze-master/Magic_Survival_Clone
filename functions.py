@@ -47,7 +47,10 @@ def spawnObj(objType, props=[]):
         y = y1 if y==1 else y2
     pos = [x,y]
     if objType=="enemy":
-        return Enemy(pos, props[0], props[1], props[2], props[3], gameSpeed)
+        return Enemy(pos, props[0], props[1], props[2], props[3], objType, gameSpeed)
+    if objType=="sprinter":
+        tar = 2*np.array([xmax/2,ymax/2]) - np.array(pos)
+        return Sprinter(pos, props[0], props[1], props[2], props[3], objType, tar, gameSpeed)
     if objType=="mana item":
         return Mana(pos, rarity, props[0], gameSpeed)
     if objType=="chest":

@@ -49,7 +49,7 @@ for x in range(n):
     
 #Spawn enemies
 enemies = []
-n = 5
+n = 0 #5
 for x in range(n): 
     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))#Health, damage, speed
 
@@ -69,12 +69,13 @@ healthBar.setLength(player.hp, 100)
 
 projectiles = []
 lavazones = []
+electricZone = Zone((player.center-[eZoneSize/2,eZoneSize/2]), ["electric_zone.png"], eZoneDmg, eZoneSize, np.inf, gameSpeed)
 
 direct = []
 
 while running:
     start = time.time()
-    screen.fill((0,70,0)) #0,150,0
+    screen.fill((0,100,0)) #0,150,0
 
     #Events o(n) can't do anything about this one's time complexity tho
     for event in pg.event.get():
@@ -118,7 +119,13 @@ while running:
             #Enemy movement
             if keyMove: enemies[i].move(direct, playerSpeed)
             if mouseMove: enemies[i].mouseMove(mouseDir, playerSpeed)
-            enemies[i].mainMove(np.array(pg.mouse.get_pos()))
+            if obj.type!= "sprinter": 
+                enemies[i].mainMove(np.array(pg.mouse.get_pos()))
+            else: 
+                enemies[i].mainMove()
+                if inBox(enemies[i].target, enemies[i].hitbox):
+                    del enemies[i]
+                    continue
 
             #Enemy despawns if out of range
             if not inBox(enemies[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
@@ -145,6 +152,7 @@ while running:
 
             if boxCollision(player, mana_items[i]):
                 player.mana["amt"] += manaObj.mana
+                total_mana += manaObj.mana
                 manaBar.setLength(player.mana["amt"], player.mana["cap"])
                 del mana_items[i]
         
@@ -179,13 +187,9 @@ while running:
                 if boxCollision(projectiles[i], enemy):
                     enemies[j].hp -= bullet.dmg
                     del projectiles[i]
-                    if enemies[j].hp <= 0:
-                        player.mana["amt"] += enemies[j].mana
-                        manaBar.setLength(player.mana["amt"], player.mana["cap"])
-                        del enemies[j]
-                        score += 1
                     break
         
+        #Lavazone movement
         lavaIntervalTimer[0] += gameSpeed/trueSpeed
         for i,lavazone in enumerate(lavazones):
             if keyMove: lavazones[i].move(direct, playerSpeed)
@@ -195,20 +199,27 @@ while running:
             lavazones[i].duration -= gameSpeed/trueSpeed
             if lavazone.duration <= 0:
                 del lavazones[i]
+                continue
             if lavaIntervalTimer[0] >= lavaIntervalTimer[1]:
                 for j,enemy in enumerate(enemies):
                     if ballCollision(lavazones[i], enemy):
                         enemies[j].hp -= lavazone.dmg
-                        if enemies[j].hp <= 0:
-                            player.mana["amt"] += enemies[j].mana
-                            manaBar.setLength(player.mana["amt"], player.mana["cap"])
-                            del enemies[j]
-                            score += 1
+        
+        #Electric zone daamage
+        eZoneIntervalTimer[0] += gameSpeed/trueSpeed
+        if eZoneIntervalTimer[0] >= eZoneIntervalTimer[1]:
+            for i,enemy in enumerate(enemies):
+                if ballCollision(electricZone, enemy):
+                    enemies[i].hp -= electricZone.dmg
+            eZoneIntervalTimer[0] = 0
+        electricZone.draw(screen)
+
             
         
         #Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
             for j,other in enumerate(enemies):
+                if(enemy.type=="sprinter" or other.type=="sprinter"): continue
                 if(i>j) and ballCollision(enemy, other): #changed i!=j to i>j to cut execution time in half
                     dist = enemy.center - other.center
                     res = m.sqrt((dist[0]**2)+(dist[1]**2))
@@ -227,6 +238,7 @@ while running:
             #Enemy spawn
             if ticks%2 == 0:
                 enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
+                # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
 
             #Mana spawn
             mana_spawn = rd.randint(1, 5)
@@ -272,7 +284,13 @@ while running:
             ))
             lavaCdTimer[0] = 0
         
-
+        #Enemy Death
+        for j,enemy in enumerate(enemies):
+            if enemies[j].hp <= 0:
+                player.mana["amt"] += enemies[j].mana
+                manaBar.setLength(player.mana["amt"], player.mana["cap"])
+                del enemies[j]
+                score += 1
 
         #Mana level up
         if player.mana["amt"] >= player.mana["cap"]:
@@ -315,6 +333,7 @@ while running:
             projectiles[i].changeSpeed(gameSpeed)
 
 print("Mana level :", player.mana["lvl"])
+print("Total mana collected:", total_mana)
 print("Artifacts collected :", player.artifacts)
 print("Enemies killed :", score)
 print("Player health :", player.hp)

@@ -5,6 +5,7 @@ gameSpeed = trueSpeed/fpsLimit
 playerSpeed = 1.0
 attractSpeed = 1.6
 score = 0
+total_mana = 0
 
 #View screen box
 xmax, ymax = 1160, 610

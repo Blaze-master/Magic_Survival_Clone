@@ -92,11 +92,12 @@ class Player(Object):
         pass #Later
 
 class Enemy(NonPlayerObject):
-    def __init__(self, position, images, hp, dmg, speed, gSpeed):
+    def __init__(self, position, images, hp, dmg, speed, enemyType, gSpeed):
         super().__init__(position, images[0], gSpeed)
         self.hp = hp
         self.dmg = dmg
         self.moveSpeed = speed
+        self.type = enemyType
         self.rad = (self.image.get_width()/2) + -5 #10, slightly bigger than the sprite's actual radius
         self.trueRad = self.image.get_width()/2
         self.center = self.pos+self.rad
@@ -108,6 +109,13 @@ class Enemy(NonPlayerObject):
         add = abs(dist[0]) + abs(dist[1])
         self.pos += dist*self.moveSpeed*self.speed/add
         self.moveHitbox()
+
+class Sprinter(Enemy):
+    def __init__(self, position, images, hp, dmg, speed, enemyType, target, gSpeed):
+        super().__init__(position, images, hp, dmg, speed, enemyType, gSpeed)
+        self.target = target
+    def mainMove(self):
+        return super().mainMove(self.target)
 
 class Background(NonPlayerObject):
     def __init__(self, position, image, gSpeed):
