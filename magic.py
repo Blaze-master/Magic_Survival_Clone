@@ -46,13 +46,13 @@ lavaUpgrades = [
     #Traits
 ]
 
-eZoneBaseDmg = 20
+eZoneBaseDmg = 25
 eZoneDmgMultiplier = 1
 eZoneDmg = eZoneBaseDmg * eZoneDmgMultiplier
-eZoneBaseSize = 200
+eZoneBaseSize = 0 #100
 eZoneSizeMultiplier = 1
 eZoneSize = eZoneBaseSize * eZoneSizeMultiplier
-eZoneBaseInterval = .2
+eZoneBaseInterval = .2 #.2
 eZoneIntervalMultiplier = 1
 eZoneIntervalTimer = [0, eZoneBaseInterval/eZoneIntervalMultiplier]
 eZoneLevel = 1

@@ -2,7 +2,7 @@
 fpsLimit = 60 #60
 trueSpeed = 300 #300
 gameSpeed = trueSpeed/fpsLimit
-playerSpeed = 1.0
+playerSpeed = 1.5
 attractSpeed = 1.6
 score = 0
 total_mana = 0

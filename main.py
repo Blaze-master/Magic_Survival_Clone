@@ -236,9 +236,9 @@ while running:
             ticks += 1
 
             #Enemy spawn
-            if ticks%2 == 0:
-                enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
-                # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
+            if ticks%1 == 0:
+                # enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
+                enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
 
             #Mana spawn
             mana_spawn = rd.randint(1, 5)
