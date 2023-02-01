@@ -26,7 +26,7 @@ running = True
 # mixer.music.load("Blizzard.mp3")
 # mixer.music.play(-1)
 
-keyMove = True
+keyMove = False
 pause = False
 mouseMove = not keyMove
 
@@ -95,9 +95,8 @@ while running:
         if not keyMove:
             mousePos = np.array(pg.mouse.get_pos(), dtype="float64")
             mousePos -= player.center
-            sqrSum = mousePos[0]**2 + mousePos[1]**2
-            sqrSum = sqrSum if sqrSum != 0 else 1
-            magn = sqrSum**0.5
+            magn = magnitude(mousePos)
+            magn = magn if magn != 0 else 1
             mouseDir = mousePos/magn
 
         
@@ -110,9 +109,50 @@ while running:
             background[i].respawn(
                 [bg_xmin, bg_xmax, bg_ymin, bg_ymax],
                 [xmin, xmax, ymin, ymax]
-                )
+            )
 
             background[i].draw(screen)
+        
+        #Mana item movement o(n)
+        for i, manaObj in enumerate(mana_items):
+            if keyMove: mana_items[i].move(direct, playerSpeed)
+            if mouseMove: mana_items[i].mouseMove(mouseDir, playerSpeed)
+            
+            #If oor, respawn and change rarity
+            if not inBox(mana_items[i].center, [[fs_xmin, fs_ymin],[fs_xmax, fs_ymax]]):
+                mana_items[i].changeRarity
+                mana_items[i].respawn(
+                    [fs_xmin, fs_xmax, fs_ymin, fs_ymax],
+                    [fr_xmin, fr_xmax, fr_ymin, fr_ymax]
+                )
+            
+            if inRange(player.pickupRad, player.center, mana_items[i].center):
+                mana_items[i].attract(player.center)
+
+            if boxCollision(player, mana_items[i]):
+                player.mana["amt"] += manaObj.mana
+                total_mana += manaObj.mana
+                manaBar.setLength(player.mana["amt"], player.mana["cap"])
+                del mana_items[i]
+                continue
+
+            mana_items[i].draw(screen)
+        
+        #Chest item movement o(n)
+        for i,chest in enumerate(chests):
+            if keyMove: chests[i].move(direct, playerSpeed)
+            if mouseMove: chests[i].mouseMove(mouseDir, playerSpeed)
+
+            #Chest despawns if out of range
+            if boxCollision(player, chests[i]):
+                player.artifacts += 1
+                del chests[i]
+                continue
+            elif not inBox(chests[i].center, [[fs_xmin, fs_ymin],[fs_xmax, fs_ymax]]):
+                del chests[i]
+                continue
+
+            chests[i].draw(screen)
         
         #Enemy movement o(n)
         for i, obj in enumerate(enemies):
@@ -131,46 +171,8 @@ while running:
             if not inBox(enemies[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
                 del enemies[i]
                 continue
-        
-        #Mana item movement o(n)
-        for i, manaObj in enumerate(mana_items):
-            if keyMove: mana_items[i].move(direct, playerSpeed)
-            if mouseMove: mana_items[i].mouseMove(mouseDir, playerSpeed)
-            
-            #If oor, respawn and change rarity
-            if not inBox(mana_items[i].center, [[fs_xmin, fs_ymin],[fs_xmax, fs_ymax]]):
-                mana_items[i].changeRarity
-                mana_items[i].respawn(
-                    [fs_xmin, fs_xmax, fs_ymin, fs_ymax],
-                    [fr_xmin, fr_xmax, fr_ymin, fr_ymax]
-                    )
-            
-            if inRange(player.pickupRad, player.center, mana_items[i].center):
-                mana_items[i].attract(player.center)
-            
-            mana_items[i].draw(screen)
 
-            if boxCollision(player, mana_items[i]):
-                player.mana["amt"] += manaObj.mana
-                total_mana += manaObj.mana
-                manaBar.setLength(player.mana["amt"], player.mana["cap"])
-                del mana_items[i]
-        
-        #Chest item movement o(n)
-        for i,chest in enumerate(chests):
-            if keyMove: chests[i].move(direct, playerSpeed)
-            if mouseMove: chests[i].mouseMove(mouseDir, playerSpeed)
-            
-            chests[i].draw(screen)
-
-            #Chest despawns if out of range
-            if boxCollision(player, chests[i]):
-                player.artifacts += 1
-                del chests[i]
-            elif not inBox(chests[i].center, [[fs_xmin, fs_ymin],[fs_xmax, fs_ymax]]):
-                del chests[i]
-        
-        #Projectile movement o(n^2)
+        #Projectile movement & damage o(n^2)
         for i,bullet in enumerate(projectiles):
             if keyMove: projectiles[i].move(direct, playerSpeed)
             if mouseMove: projectiles[i].mouseMove(mouseDir, playerSpeed)
@@ -185,12 +187,12 @@ while running:
             #Enemy hit
             for j,enemy in enumerate(enemies):
                 if boxCollision(projectiles[i], enemy):
-                    enemies[j].hp -= bullet.dmg
+                    enemies[j].hp -= (bullet.dmg*projDmgMultiplier)
                     del projectiles[i]
                     break
         
-        #Lavazone movement
-        lavaIntervalTimer[0] += gameSpeed/trueSpeed
+        #Lavazone movement & damage o(n^2)
+        lavaIntervalTimer[0] += gameSpeed*lavaIntervalMultiplier/trueSpeed
         for i,lavazone in enumerate(lavazones):
             if keyMove: lavazones[i].move(direct, playerSpeed)
             if mouseMove: lavazones[i].mouseMove(mouseDir, playerSpeed)
@@ -203,18 +205,25 @@ while running:
             if lavaIntervalTimer[0] >= lavaIntervalTimer[1]:
                 for j,enemy in enumerate(enemies):
                     if ballCollision(lavazones[i], enemy):
-                        enemies[j].hp -= lavazone.dmg
+                        enemies[j].hp -= (lavazone.dmg*lavaDmgMultiplier)
         
-        #Electric zone daamage
-        eZoneIntervalTimer[0] += gameSpeed/trueSpeed
+        #Electric zone damage
+        eZoneIntervalTimer[0] += gameSpeed*eZoneIntervalMultiplier/trueSpeed
         if eZoneIntervalTimer[0] >= eZoneIntervalTimer[1]:
             for i,enemy in enumerate(enemies):
                 if ballCollision(electricZone, enemy):
-                    enemies[i].hp -= electricZone.dmg
+                    enemies[i].hp -= (electricZone.dmg*eZoneDmgMultiplier)
             eZoneIntervalTimer[0] = 0
         electricZone.draw(screen)
+        
+        #Enemy Death
+        for j,enemy in enumerate(enemies):
+            if enemies[j].hp <= 0:
+                player.mana["amt"] += enemies[j].mana
+                manaBar.setLength(player.mana["amt"], player.mana["cap"])
+                del enemies[j]
+                score += 1
 
-            
         
         #Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
@@ -222,7 +231,7 @@ while running:
                 if(enemy.type=="sprinter" or other.type=="sprinter"): continue
                 if(i>j) and ballCollision(enemy, other): #changed i!=j to i>j to cut execution time in half
                     dist = enemy.center - other.center
-                    res = m.sqrt((dist[0]**2)+(dist[1]**2))
+                    res = magnitude(dist)
                     factor = enemy.rad*2/res             
                     move = dist*(factor-1)/2 #10
                     enemies[i].pos += move
@@ -236,9 +245,9 @@ while running:
             ticks += 1
 
             #Enemy spawn
-            if ticks%1 == 0:
-                # enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
-                enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
+            if ticks%2 == 0:
+                enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
+                # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
 
             #Mana spawn
             mana_spawn = rd.randint(1, 5)
@@ -262,35 +271,28 @@ while running:
                         break
 
         #Attack cooldowns
-        projTimer[0] += gameSpeed/trueSpeed
+        projTimer[0] += gameSpeed*projCdMultiplier/trueSpeed
         if projTimer[0] >= projTimer[1]:
             #Projectile spawn o(n)
             if len(enemies)>0:
                 closest = []
                 for enemy in enemies:
                     dist = enemy.center-player.center
-                    dist = m.sqrt(dist[0]**2 + dist[1]**2)
+                    dist = magnitude(dist)
                     closest.append(dist)
                 closest = np.array([closest]).argmin()
                 projectiles.append(spawnObj(
                     "projectile", [player.center, "bullet.png", enemies[closest].center, projSpeed, projDmg])
                 )
             projTimer[0] = 0
-        lavaCdTimer[0] += gameSpeed/trueSpeed
+
+        lavaCdTimer[0] += gameSpeed*lavaCdMultiplier/trueSpeed
         if lavaCdTimer[0] >= lavaCdTimer[1]:
-            pos = (np.random.rand(2) * [xmax, ymax]) -100
+            pos = (np.random.rand(2) * [xmax, ymax]) - lavaSize
             lavazones.append(spawnObj(
                 "lavazone", [pos, ["lava_zone.png"], lavaDmg, lavaSize, lavaDuration]
             ))
             lavaCdTimer[0] = 0
-        
-        #Enemy Death
-        for j,enemy in enumerate(enemies):
-            if enemies[j].hp <= 0:
-                player.mana["amt"] += enemies[j].mana
-                manaBar.setLength(player.mana["amt"], player.mana["cap"])
-                del enemies[j]
-                score += 1
 
         #Mana level up
         if player.mana["amt"] >= player.mana["cap"]:
@@ -302,8 +304,6 @@ while running:
                 projDmgMultiplier += projUpgrades[projLevel-1][0]
                 projCdMultiplier += projUpgrades[projLevel-1][1]
                 projLevel += 1
-                projDmg = projBaseDmg * projDmgMultiplier
-                projTimer[1] = projBaseCd/projCdMultiplier
 
             manaBar.setLength(player.mana["amt"], player.mana["cap"])
         
@@ -337,6 +337,4 @@ print("Total mana collected:", total_mana)
 print("Artifacts collected :", player.artifacts)
 print("Enemies killed :", score)
 print("Player health :", player.hp)
-print("Projectile damage :", projDmg)
-print("Projectile cooldown :", projTimer[1])
 print("Time :", ticks/10, "secs")

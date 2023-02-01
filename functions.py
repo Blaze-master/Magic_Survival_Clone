@@ -60,6 +60,9 @@ def spawnObj(objType, props=[]):
     if objType=="lavazone":
         return Zone(props[0], props[1], props[2], props[3], props[4], gameSpeed)
 
+def magnitude(vec):
+    return m.sqrt(m.pow(vec[0],2)+m.pow(vec[1],2))
+
 def boxCollision(obj1, obj2):
     X1 = obj1.hitbox[1][0] < obj2.hitbox[0][0]
     X2 = obj1.hitbox[0][0] > obj2.hitbox[1][0]
@@ -72,12 +75,33 @@ def inBox(point, box):
     return (point[0]>box[0][0] and point[0]<box[1][0]) and (point[1]>box[0][1] and point[1]<box[1][1])
 
 def ballCollision(obj1, obj2):
-    distance = m.sqrt(m.pow(obj1.center[0]-obj2.center[0],2)+m.pow(obj1.center[1]-obj2.center[1],2))
+    distance = magnitude([obj1.center[0]-obj2.center[0], obj1.center[1]-obj2.center[1]])
     return distance < (obj1.rad+obj2.rad)
 
 def inRange(rad, cen1, cen2):
-    distance = m.sqrt(m.pow(cen1[0]-cen2[0],2)+m.pow(cen1[1]-cen2[1],2))
+    distance = magnitude([cen1[0]-cen2[0], cen1[1]-cen2[1]])
     return distance < rad
 
+def distToLine(objPoint, point, angle):
+    m = np.tan(angle)
+    x = ((objPoint[1]-point[1])+((objPoint[0]+point[0]*m**2)/m))/((1+m**2)/m)
+    y = point[1]+m*(x-point[0])
+    return np.array([x-objPoint[0], y-objPoint[1]])
+
+def lineCollision(obj, line):
+    d = magnitude(distToLine(obj.center, line.center, line.angle))
+    return d < line.thickness+obj.rad
+
+def lineBoxCollision(obj, line):
+    d1 = distToLine(obj.hitbox[0], line.center, line.angle)
+    d2 = distToLine(obj.hitbox[1], line.center, line.angle)
+    d3 = distToLine([obj.hitbox[0][0], obj.hitbox[1][1]], line.center, line.angle)
+    d4 = distToLine([obj.hitbox[1][0], obj.hitbox[0][1]], line.center, line.angle)
+    d1 /= np.abs(d1)
+    d2 /= np.abs(d2)
+    d3 /= np.abs(d3)
+    d4 /= np.abs(d4)
+    con = d1==d2 and d2==d3 and d3==d4
+    return not con
 
 if __name__ == "__main__": pass

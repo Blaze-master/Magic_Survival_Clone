@@ -137,7 +137,6 @@ class Mana(NonPlayerObject):
         add = abs(dist[0]) + abs(dist[1])
         self.pos += dist*self.moveSpeed*self.speed/add
         self.moveHitbox()
-        self.center = self.pos+(self.image.get_width()/2)
     
     def changeRarity(self):
         rarity = rd.randint(1,100)

@@ -1,9 +1,10 @@
 import numpy as np
+
 projBaseDmg = 35
 projDmgMultiplier = 1
 projSpeed = 4.0 
 projDmg = projBaseDmg * projDmgMultiplier
-projBaseCd = np.inf #.62
+projBaseCd = .62 #.62
 projCdMultiplier = 1.0
 projTimer = [0, projBaseCd/projCdMultiplier] #[time since last attack, cooldown]
 projLevel = 1
@@ -22,7 +23,7 @@ projUpgrades = [
 lavaBaseDmg = 100
 lavaDmgMultiplier = 1
 lavaDmg = lavaBaseDmg * lavaDmgMultiplier
-lavaBaseCd = np.inf #5
+lavaBaseCd = 5 #5
 lavaCdMultiplier = 1
 lavaCdTimer = [0, lavaBaseCd/lavaCdMultiplier]
 lavaBaseInterval = .5
@@ -49,7 +50,7 @@ lavaUpgrades = [
 eZoneBaseDmg = 25
 eZoneDmgMultiplier = 1
 eZoneDmg = eZoneBaseDmg * eZoneDmgMultiplier
-eZoneBaseSize = 0 #100
+eZoneBaseSize = 100 #100
 eZoneSizeMultiplier = 1
 eZoneSize = eZoneBaseSize * eZoneSizeMultiplier
 eZoneBaseInterval = .2 #.2
