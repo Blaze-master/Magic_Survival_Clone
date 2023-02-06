@@ -73,7 +73,7 @@ healthBar.setLength(player.hp, 100)
 magic_bullets = []
 lavazones = []
 electricZone = Zone(
-    (player.center-[magic["electric_zone"]["size"] for _ in range(2)]),
+    (player.center-[magic["electric_zone"]["size"]/2, magic["electric_zone"]["size"]/2]),
     ["electric_zone.png"],
     magic["electric_zone"]["dmg"],
     magic["electric_zone"]["size"],
@@ -91,18 +91,25 @@ while running:
     if not lvlUp: screen.fill((0,100,0)) #0,150,0
 
     #Events o(n) can't do anything about this one's time complexity tho
-    for event in pg.event.get():
+    events = []
+    while pg.event.peek():
+        events.append(pg.event.poll())
+    for event in events:
         #Quit
         if event.type == pg.QUIT:
             running = False
-        if keyMove:
-            direct = checkMovement(direct, event)
         if not lvlUp:
+            if keyMove:
+                if not pause:
+                    direct = checkMovement(direct, event)
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_SPACE:
+                        pause = not pause
             if event.type == pg.MOUSEBUTTONDOWN and mouseMove:
                 pause = not pause
-            if event.type == pg.KEYDOWN:
-                if event.key == pg.K_SPACE and keyMove:
-                    pause = not pause
+    
+    if pause or lvlUp:
+        direct = []
 
     if not (pause or lvlUp):
         if not keyMove:
@@ -219,7 +226,7 @@ while running:
                 for j,enemy in enumerate(enemies):
                     if ballCollision(lavazones[i], enemy):
                         enemies[j].hp -= (lavazone.dmg*magic["lavazone"]["multiplier"]["dmg"])
-                magic["lavazone"]["interval"] = 0
+                magic["lavazone"]["interval"][0] = 0
         
         #Electric zone damage
         magic["electric_zone"]["interval"][0] += gameSpeed*magic["electric_zone"]["multiplier"]["interval"]/trueSpeed
@@ -329,17 +336,24 @@ while running:
             player.mana["lvl"] += 1
             player.mana["cap"] += 50
 
+            avail = False
             for n in range(3):
-                upgrade = Text(fontType, fontSize, "Lavazone lvl 1", (255,255,255), [textX, textY+(n*(textHeight+textMargin))])
-                options.append(upgrade)
-            options[optionScroll].highlight()
-            
-            lvlUp = True
-
-            # if projLevel < 8:
-            #     projDmgMultiplier += projUpgrades[projLevel-1][0]
-            #     projCdMultiplier += projUpgrades[projLevel-1][1]
-            #     projLevel += 1
+                if len(availableMagic)>0:
+                    avail = True
+                    mg = rd.choice(availableMagic)
+                    availableMagic.remove(mg)
+                    mgt = mg.replace("_"," ").capitalize()
+                    upgrade = Text(
+                        fontType,
+                        fontSize,
+                        mgt+" lvl "+str(magic[mg]["level"]+1),
+                        (255,255,255),
+                        [textX, textY+(n*(textHeight+textMargin))],
+                        mg
+                        )
+                    options.append(upgrade)
+            if avail: options[optionScroll].highlight()            
+            lvlUp = avail
 
             manaBar.setLength(player.mana["amt"], player.mana["cap"])
         
@@ -368,22 +382,30 @@ while running:
         for i,obj in enumerate(magic_bullets):
             magic_bullets[i].changeSpeed(gameSpeed)
     
-    else:
+    elif lvlUp:
         mousePos = mousePos = np.array(pg.mouse.get_pos())
         for i,upgrade in enumerate(options):
             if inBox(mousePos, upgrade.box) and not upgrade.highlighted:
                 options[i].highlight()
-                optionScroll = i
             if upgrade.highlighted and not inBox(mousePos, upgrade.box):
                 options[i].highlight()
             options[i].draw(screen)
-        for event in pg.event.get():
-            if event.type == pg.MOUSEBUTTONUP:
+        for event in events:
+            if event.type == pg.MOUSEBUTTONDOWN:
                 for i,upgrade in enumerate(options):
                     if inBox(mousePos, upgrade.box):
-                        pass
-                
+                        mag = magic[upgrade.magic]
+                        up = mag["upgrades"][mag["level"]-1]
+                        magic[upgrade.magic]["multiplier"][up[0]] += up[1]
+                        magic[upgrade.magic]["level"] += 1
+                        lvlUp = False        
         pg.display.update()
+        if not lvlUp:
+            options = []
+            optionScroll = 0
+            availableMagic = [x if magic[x]["level"] < magic[x]["max"] else None for x in magic.keys()]
+            while None in availableMagic:
+                availableMagic.remove(None)
 
 print("Mana level :", player.mana["lvl"])
 print("Total mana collected:", total_mana)
@@ -393,6 +415,5 @@ print("Player health :", player.hp)
 print("Time :", ticks/10, "secs")
 
 if graph:
-    # print(len(enemies), trueSpeed/gameSpeed)
     plt.plot(fps[0], fps[1])
     plt.show()

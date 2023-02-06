@@ -3,14 +3,14 @@ from objects import *
 
 def checkMovement(direct, event):
     if event.type == pg.KEYDOWN:
-        if event.key == pg.K_RIGHT:
-            direct.append("right")
         if event.key == pg.K_LEFT:
             direct.append("left")
-        if event.key == pg.K_DOWN:
-            direct.append("down")
+        if event.key == pg.K_RIGHT:
+            direct.append("right")
         if event.key == pg.K_UP:
             direct.append("up")
+        if event.key == pg.K_DOWN:
+            direct.append("down")
     try:
         if event.type == pg.KEYUP:
             if event.key == pg.K_LEFT:

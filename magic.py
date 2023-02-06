@@ -10,7 +10,7 @@ magic = {
             "speed" : 1,
             "cd" : 1
         },
-        "level" : 0,
+        "level" : 1,
         "upgrades" : [
             ("dmg", .2),
             ("cd", .2),
@@ -21,7 +21,8 @@ magic = {
             ("cd", .5),
             ("dmg", .5)
             #Traits
-        ]
+        ],
+        "max" : 8
     },
 
     "lavazone" : {
@@ -37,7 +38,7 @@ magic = {
             "duration" : 1,
             "interval" : 1
         },
-        "level" : 0,
+        "level" : 1,
         "upgrades" : [
             ("size", .1),
             ("dmg", .3),
@@ -46,19 +47,20 @@ magic = {
             ("duration", .5),
             ("dmg", .5)
             #Traits
-        ]
+        ],
+        "max" : 7
     },
 
     "electric_zone" : {
         "dmg" : 25.0,
         "size" : 100.0,
         "interval" : [0, .2],
-        "multipliers" : {
+        "multiplier" : {
             "dmg" : 1,
             "size" : 1,
             "interval" : 1
         },
-        "level" : 0,
+        "level" : 1,
         "upgrades" : [
             ("", ),
             ("", ),
@@ -68,9 +70,14 @@ magic = {
             ("", ),
             ("", ),
             #Traits
-        ]
+        ],
+        "max" : 1
     }
 }
+
+availableMagic = [x if magic[x]["level"] < magic[x]["max"] else None for x in magic.keys()]
+while None in availableMagic:
+    availableMagic.remove(None)
 
 projBaseDmg = 35
 projDmgMultiplier = 1
