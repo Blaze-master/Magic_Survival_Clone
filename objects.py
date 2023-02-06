@@ -3,6 +3,30 @@ import math as m
 import numpy as np
 import random as rd
 import os
+from gamedata import textWidth, textHeight, textPadding
+
+class Text:
+    def __init__(self, fontType, size, text, color, pos, magic):
+        self.font = pg.font.Font(fontType, size)
+        self.text = self.font.render(text, True, color)
+        self.bgPos = np.array(pos, dtype="float64")
+        self.bg = pg.rect.Rect(pos[0], pos[1], textWidth, textHeight)
+        self.bgColor = (0,0,0)
+        self.pos = self.bgPos + textPadding
+        self.highlighted = False
+        self.magic = magic
+        self.box = [self.bgPos, self.bgPos+[textWidth, textHeight]]
+    
+    def highlight(self):
+        self.highlighted = not self.highlighted
+        if self.highlighted:
+            self.bgColor = (50,50,50)
+        else:
+            self.bgColor = (0,0,0)
+    
+    def draw(self, screen):
+        pg.draw.rect(screen, self.bgColor, self.bg)
+        screen.blit(self.text, self.pos)
 
 class Object:
     def __init__(self, position, image):
@@ -178,6 +202,16 @@ class Zone(NonPlayerObject):
         self.rad = diameter/2
         self.dmg = dmg
         self.duration = duration
+        self.moveHitbox()
+
+class MovingZone(Zone):
+    def __init__(self, position, images, dmg, diameter, duration, target, speed, gSpeed):
+        super().__init__(position, images, dmg, diameter, duration, gSpeed)
+        self.target = target
+        self.moveSpeed = speed
+
+    def mainMove(self):
+        self.pos += self.target*self.moveSpeed*self.speed
         self.moveHitbox()
         
 

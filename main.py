@@ -6,6 +6,7 @@ import os
 import random as rd
 import numpy as np
 from pygame import mixer
+import matplotlib.pyplot as plt
 
 from objects import *
 from gamedata import *
@@ -17,6 +18,7 @@ from enemies import *
 #Metrics for recording passage of time
 timer = 0 #Frame counter
 ticks = 0 #1/10th of a second
+graph = False
 
 pg.init()
 
@@ -26,8 +28,9 @@ running = True
 # mixer.music.load("Blizzard.mp3")
 # mixer.music.play(-1)
 
-keyMove = False
+keyMove = True
 pause = False
+lvlUp = False
 mouseMove = not keyMove
 
 playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
@@ -67,15 +70,25 @@ manaBar = Bar([0,0], "mana_bar.png", xmax, 10)
 healthBar = Bar((player.pos+np.array([-3, 50])), "health_bar.png", 30, 4)
 healthBar.setLength(player.hp, 100)
 
-projectiles = []
+magic_bullets = []
 lavazones = []
-electricZone = Zone((player.center-[eZoneSize/2,eZoneSize/2]), ["electric_zone.png"], eZoneDmg, eZoneSize, np.inf, gameSpeed)
+electricZone = Zone(
+    (player.center-[magic["electric_zone"]["size"] for _ in range(2)]),
+    ["electric_zone.png"],
+    magic["electric_zone"]["dmg"],
+    magic["electric_zone"]["size"],
+    np.inf,
+    gameSpeed
+    )
 
 direct = []
+if graph: fps = [[],[]]
+options = []
+optionScroll = 0
 
 while running:
     start = time.time()
-    screen.fill((0,100,0)) #0,150,0
+    if not lvlUp: screen.fill((0,100,0)) #0,150,0
 
     #Events o(n) can't do anything about this one's time complexity tho
     for event in pg.event.get():
@@ -84,14 +97,14 @@ while running:
             running = False
         if keyMove:
             direct = checkMovement(direct, event)
-        elif not pause:
-            if event.type == pg.MOUSEBUTTONDOWN:
-                mouseMove = not mouseMove
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_SPACE:
+        if not lvlUp:
+            if event.type == pg.MOUSEBUTTONDOWN and mouseMove:
                 pause = not pause
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE and keyMove:
+                    pause = not pause
 
-    if not pause:
+    if not (pause or lvlUp):
         if not keyMove:
             mousePos = np.array(pg.mouse.get_pos(), dtype="float64")
             mousePos -= player.center
@@ -160,7 +173,7 @@ while running:
             if keyMove: enemies[i].move(direct, playerSpeed)
             if mouseMove: enemies[i].mouseMove(mouseDir, playerSpeed)
             if obj.type!= "sprinter": 
-                enemies[i].mainMove(np.array(pg.mouse.get_pos()))
+                enemies[i].mainMove(player.center) # np.array(pg.mouse.get_pos())
             else: 
                 enemies[i].mainMove()
                 if inBox(enemies[i].target, enemies[i].hitbox):
@@ -172,27 +185,27 @@ while running:
                 del enemies[i]
                 continue
 
-        #Projectile movement & damage o(n^2)
-        for i,bullet in enumerate(projectiles):
-            if keyMove: projectiles[i].move(direct, playerSpeed)
-            if mouseMove: projectiles[i].mouseMove(mouseDir, playerSpeed)
-            projectiles[i].mainMove()
-            projectiles[i].draw(screen)
+        #Magic bullet movement & damage o(n^2)
+        for i,bullet in enumerate(magic_bullets):
+            if keyMove: magic_bullets[i].move(direct, playerSpeed)
+            if mouseMove: magic_bullets[i].mouseMove(mouseDir, playerSpeed)
+            magic_bullets[i].mainMove()
+            magic_bullets[i].draw(screen)
             
-            #Projectile despawns if out of range
-            if not inBox(projectiles[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
-                del projectiles[i]
+            #magic_bullet despawns if out of range
+            if not inBox(magic_bullets[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
+                del magic_bullets[i]
                 continue
 
             #Enemy hit
             for j,enemy in enumerate(enemies):
-                if boxCollision(projectiles[i], enemy):
-                    enemies[j].hp -= (bullet.dmg*projDmgMultiplier)
-                    del projectiles[i]
+                if boxCollision(magic_bullets[i], enemy):
+                    enemies[j].hp -= (bullet.dmg*magic["magic_bullet"]["multiplier"]["dmg"])
+                    del magic_bullets[i]
                     break
         
         #Lavazone movement & damage o(n^2)
-        lavaIntervalTimer[0] += gameSpeed*lavaIntervalMultiplier/trueSpeed
+        magic["lavazone"]["interval"][0] += gameSpeed*magic["lavazone"]["multiplier"]["interval"]/trueSpeed
         for i,lavazone in enumerate(lavazones):
             if keyMove: lavazones[i].move(direct, playerSpeed)
             if mouseMove: lavazones[i].mouseMove(mouseDir, playerSpeed)
@@ -202,18 +215,19 @@ while running:
             if lavazone.duration <= 0:
                 del lavazones[i]
                 continue
-            if lavaIntervalTimer[0] >= lavaIntervalTimer[1]:
+            if magic["lavazone"]["interval"][0] >= magic["lavazone"]["interval"][1]:
                 for j,enemy in enumerate(enemies):
                     if ballCollision(lavazones[i], enemy):
-                        enemies[j].hp -= (lavazone.dmg*lavaDmgMultiplier)
+                        enemies[j].hp -= (lavazone.dmg*magic["lavazone"]["multiplier"]["dmg"])
+                magic["lavazone"]["interval"] = 0
         
         #Electric zone damage
-        eZoneIntervalTimer[0] += gameSpeed*eZoneIntervalMultiplier/trueSpeed
-        if eZoneIntervalTimer[0] >= eZoneIntervalTimer[1]:
+        magic["electric_zone"]["interval"][0] += gameSpeed*magic["electric_zone"]["multiplier"]["interval"]/trueSpeed
+        if magic["electric_zone"]["interval"][0] >= magic["electric_zone"]["interval"][1]:
             for i,enemy in enumerate(enemies):
                 if ballCollision(electricZone, enemy):
-                    enemies[i].hp -= (electricZone.dmg*eZoneDmgMultiplier)
-            eZoneIntervalTimer[0] = 0
+                    enemies[i].hp -= (electricZone.dmg*magic["electric_zone"]["multiplier"]["dmg"])
+            magic["electric_zone"]["interval"][0] = 0
         electricZone.draw(screen)
         
         #Enemy Death
@@ -244,9 +258,15 @@ while running:
         if timer % tmp == 0 and timer != 0:
             ticks += 1
 
+            if graph:
+                fps[0].append(ticks/10)
+                fps[1].append(trueSpeed/gameSpeed)
+
             #Enemy spawn
-            if ticks%2 == 0:
-                enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
+            if ticks%1 == 0:
+                n = 2
+                for _ in range(n):
+                    enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
                 # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
 
             #Mana spawn
@@ -263,7 +283,7 @@ while running:
             if plyrDmgCd<ticks:
                 for enemy in enemies:
                     if ballCollision(player, enemy):
-                        player.hp -= enemy.dmg
+                        # player.hp -= enemy.dmg
                         healthBar.setLength(player.hp, 100)
                         plyrDmgCd = ticks + 5
                         if player.hp <= 0:
@@ -271,9 +291,9 @@ while running:
                         break
 
         #Attack cooldowns
-        projTimer[0] += gameSpeed*projCdMultiplier/trueSpeed
-        if projTimer[0] >= projTimer[1]:
-            #Projectile spawn o(n)
+        magic["magic_bullet"]["cd"][0] += gameSpeed*magic["magic_bullet"]["multiplier"]["cd"]/trueSpeed
+        if magic["magic_bullet"]["cd"][0] >= magic["magic_bullet"]["cd"][1]:
+            #Magic bullet spawn o(n)
             if len(enemies)>0:
                 closest = []
                 for enemy in enemies:
@@ -281,18 +301,27 @@ while running:
                     dist = magnitude(dist)
                     closest.append(dist)
                 closest = np.array([closest]).argmin()
-                projectiles.append(spawnObj(
-                    "projectile", [player.center, "bullet.png", enemies[closest].center, projSpeed, projDmg])
+                magic_bullets.append(spawnObj("magic_bullet", [
+                    player.center,
+                    "bullet.png",
+                    enemies[closest].center,
+                    magic["magic_bullet"]["speed"]*magic["magic_bullet"]["multiplier"]["speed"],
+                    magic["magic_bullet"]["dmg"]
+                    ])
                 )
-            projTimer[0] = 0
+            magic["magic_bullet"]["cd"][0] = 0
 
-        lavaCdTimer[0] += gameSpeed*lavaCdMultiplier/trueSpeed
-        if lavaCdTimer[0] >= lavaCdTimer[1]:
+        magic["lavazone"]["cd"][0] += gameSpeed*magic["lavazone"]["multiplier"]["cd"]/trueSpeed
+        if magic["lavazone"]["cd"][0] >= magic["lavazone"]["cd"][1]:
             pos = (np.random.rand(2) * [xmax, ymax]) - lavaSize
-            lavazones.append(spawnObj(
-                "lavazone", [pos, ["lava_zone.png"], lavaDmg, lavaSize, lavaDuration]
-            ))
-            lavaCdTimer[0] = 0
+            lavazones.append(spawnObj("lavazone", [
+                pos,
+                ["lava_zone.png"],
+                magic["lavazone"]["dmg"],
+                magic["lavazone"]["size"]*magic["lavazone"]["multiplier"]["size"],
+                magic["lavazone"]["duration"]*magic["lavazone"]["multiplier"]["duration"]
+                ]))
+            magic["lavazone"]["cd"][0] = 0
 
         #Mana level up
         if player.mana["amt"] >= player.mana["cap"]:
@@ -300,10 +329,17 @@ while running:
             player.mana["lvl"] += 1
             player.mana["cap"] += 50
 
-            if projLevel < 8:
-                projDmgMultiplier += projUpgrades[projLevel-1][0]
-                projCdMultiplier += projUpgrades[projLevel-1][1]
-                projLevel += 1
+            for n in range(3):
+                upgrade = Text(fontType, fontSize, "Lavazone lvl 1", (255,255,255), [textX, textY+(n*(textHeight+textMargin))])
+                options.append(upgrade)
+            options[optionScroll].highlight()
+            
+            lvlUp = True
+
+            # if projLevel < 8:
+            #     projDmgMultiplier += projUpgrades[projLevel-1][0]
+            #     projCdMultiplier += projUpgrades[projLevel-1][1]
+            #     projLevel += 1
 
             manaBar.setLength(player.mana["amt"], player.mana["cap"])
         
@@ -329,8 +365,25 @@ while running:
             mana_items[i].changeSpeed(gameSpeed)
         for i,obj in enumerate(chests):
             chests[i].changeSpeed(gameSpeed)
-        for i,obj in enumerate(projectiles):
-            projectiles[i].changeSpeed(gameSpeed)
+        for i,obj in enumerate(magic_bullets):
+            magic_bullets[i].changeSpeed(gameSpeed)
+    
+    else:
+        mousePos = mousePos = np.array(pg.mouse.get_pos())
+        for i,upgrade in enumerate(options):
+            if inBox(mousePos, upgrade.box) and not upgrade.highlighted:
+                options[i].highlight()
+                optionScroll = i
+            if upgrade.highlighted and not inBox(mousePos, upgrade.box):
+                options[i].highlight()
+            options[i].draw(screen)
+        for event in pg.event.get():
+            if event.type == pg.MOUSEBUTTONUP:
+                for i,upgrade in enumerate(options):
+                    if inBox(mousePos, upgrade.box):
+                        pass
+                
+        pg.display.update()
 
 print("Mana level :", player.mana["lvl"])
 print("Total mana collected:", total_mana)
@@ -338,3 +391,8 @@ print("Artifacts collected :", player.artifacts)
 print("Enemies killed :", score)
 print("Player health :", player.hp)
 print("Time :", ticks/10, "secs")
+
+if graph:
+    # print(len(enemies), trueSpeed/gameSpeed)
+    plt.plot(fps[0], fps[1])
+    plt.show()

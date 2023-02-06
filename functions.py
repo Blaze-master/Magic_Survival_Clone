@@ -55,7 +55,7 @@ def spawnObj(objType, props=[]):
         return Mana(pos, rarity, props[0], gameSpeed)
     if objType=="chest":
         return Background(pos, "chest.png", gameSpeed)
-    if objType=="projectile":
+    if objType=="magic_bullet":
         return Projectile(props[0], props[1], props[2], props[3], props[4], gameSpeed)
     if objType=="lavazone":
         return Zone(props[0], props[1], props[2], props[3], props[4], gameSpeed)
