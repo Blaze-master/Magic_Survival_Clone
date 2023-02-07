@@ -59,6 +59,8 @@ def spawnObj(objType, props=[]):
         return Projectile(props[0], props[1], props[2], props[3], props[4], gameSpeed)
     if objType=="lavazone":
         return Zone(props[0], props[1], props[2], props[3], props[4], gameSpeed)
+    if objType=="arcane_ray":
+        pass
 
 def magnitude(vec):
     return m.sqrt(m.pow(vec[0],2)+m.pow(vec[1],2))
@@ -83,14 +85,19 @@ def inRange(rad, cen1, cen2):
     return distance < rad
 
 def distToLine(objPoint, point, angle):
+    angle = (360-angle)+90
+    angle /= (180/np.pi)
     m = np.tan(angle)
     x = ((objPoint[1]-point[1])+((objPoint[0]+point[0]*m**2)/m))/((1+m**2)/m)
     y = point[1]+m*(x-point[0])
-    return np.array([x-objPoint[0], y-objPoint[1]])
+    return np.array([x,y])
 
 def lineCollision(obj, line):
-    d = magnitude(distToLine(obj.center, line.center, line.angle))
-    return d < line.thickness+obj.rad
+    vec = distToLine(obj.center, line.center, line.angle)
+    d = magnitude([vec[0]-obj.center[0],vec[1]-obj.center[1]])
+    # print(d, vec)
+    # print(line.hitbox)
+    return d < line.thickness+obj.rad and (inBox(vec, line.hitbox) or boxCollision(line, obj))
 
 def lineBoxCollision(obj, line):
     d1 = distToLine(obj.hitbox[0], line.center, line.angle)
@@ -102,6 +109,6 @@ def lineBoxCollision(obj, line):
     d3 /= np.abs(d3)
     d4 /= np.abs(d4)
     con = d1==d2 and d2==d3 and d3==d4
-    return not con
+    return (not con) and (boxCollision(line, obj))
 
 if __name__ == "__main__": pass

@@ -81,6 +81,8 @@ electricZone = Zone(
     gameSpeed
     )
 
+arcane_rays = []
+
 direct = []
 if graph: fps = [[],[]]
 options = []
@@ -239,12 +241,25 @@ while running:
                 magic["electric_zone"]["interval"][0] = 0
             electricZone.draw(screen)
         
+        for i,ray in enumerate(arcane_rays):
+            arcane_rays[i].draw(screen)
+
+            arcane_rays[i].duration -= gameSpeed/trueSpeed
+            if arcane_rays[i].duration <= 0:
+                del arcane_rays[i]
+                continue
+
+            for j,enemy in enumerate(enemies):
+                if lineCollision(enemy, ray) and (not id(enemy) in ray.hits):
+                    arcane_rays[i].hits.append(id(enemy))
+                    enemies[j].hp -= ray.dmg
+        
         #Enemy Death
         for j,enemy in enumerate(enemies):
             if enemies[j].hp <= 0:
                 player.mana["amt"] += enemies[j].mana
                 manaBar.setLength(player.mana["amt"], player.mana["cap"])
-                del enemies[j]
+                enemies.remove(enemy)
                 score += 1
 
         
@@ -273,7 +288,7 @@ while running:
 
             #Enemy spawn
             if ticks%1 == 0:
-                n = 2
+                n = 1
                 for _ in range(n):
                     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
                 # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
@@ -288,6 +303,24 @@ while running:
             if chest_spawn == 10 and len(chests) < max_chests:
                 chests.append(spawnObj("chest"))
             
+            if ticks%10 == 0 and len(enemies)>0:
+                closest = []
+                for enemy in enemies:
+                    dist = enemy.center-player.center
+                    dist = magnitude(dist)
+                    closest.append(dist)
+                closest = np.array([closest]).argmin()
+                arcane_rays.append(Line(
+                    player.center,
+                    "arcane_ray.png",
+                    100,
+                    1,
+                    [1,650],
+                    0,
+                    enemies[closest].center,
+                    gameSpeed
+                ))
+            
             #Player damage (takes damage only every 5 ticks)
             if plyrDmgCd<ticks:
                 for enemy in enemies:
@@ -300,6 +333,7 @@ while running:
                         break
 
         #Attack cooldowns
+        #Magic Bullet
         magic["magic_bullet"]["cd"][0] += gameSpeed*magic["magic_bullet"]["multiplier"]["cd"]/trueSpeed
         if magic["magic_bullet"]["cd"][0] >= magic["magic_bullet"]["cd"][1]:
             #Magic bullet spawn o(n)
@@ -320,9 +354,10 @@ while running:
                 )
             magic["magic_bullet"]["cd"][0] = 0
 
+        #Lavazone
         magic["lavazone"]["cd"][0] += gameSpeed*magic["lavazone"]["multiplier"]["cd"]/trueSpeed
         if magic["lavazone"]["cd"][0] >= magic["lavazone"]["cd"][1] and magic["lavazone"]["level"] > 0:
-            pos = (np.random.rand(2) * [xmax, ymax]) - lavaSize
+            pos = (np.random.rand(2) * [xmax, ymax]) - magic["lavazone"]["size"]*magic["lavazone"]["multiplier"]["size"]
             lavazones.append(spawnObj("lavazone", [
                 pos,
                 ["lava_zone.png"],

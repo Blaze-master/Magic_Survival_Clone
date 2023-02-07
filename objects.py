@@ -172,9 +172,9 @@ class Projectile(NonPlayerObject):
     def __init__(self, position, image, target, speed, dmg, gSpeed):
         super().__init__(position, image, gSpeed)
         self.target = target-self.pos
-        self.target /= m.sqrt(self.target[0]**2 + self.target[1]**2)
         self.moveSpeed = speed
-        self.angle = m.atan(self.target[0]/self.target[1]) * (180/m.pi)
+        self.target /= m.sqrt(self.target[0]**2 + self.target[1]**2)
+        self.angle = np.arctan(self.target[0]/self.target[1]) * (180/m.pi)
         self.image = pg.transform.rotate(self.image, self.angle)
         self.dmg = dmg
     
@@ -217,6 +217,43 @@ class MovingZone(Zone):
 
     def mainMove(self):
         self.pos += self.target*self.moveSpeed*self.speed
+        self.moveHitbox()
+
+class Line(NonPlayerObject):
+    def __init__(self, position, image, dmg, duration, size, thickness, target, gSpeed):
+        super().__init__(position, image, gSpeed)
+        self.duration = duration
+        self.hits = []
+        self.size = size
+        self.thickness = thickness
+        self.image = pg.transform.scale(self.image, size)
+        self.target = target-self.pos
+        self.angle = np.arctan(self.target[0]/self.target[1]) * (180/m.pi)
+        self.image = pg.transform.rotate(self.image, self.angle)
+
+        x,y = self.target[0],self.target[1]
+        if x>0 and y>0:
+            self.angle = self.angle
+        if (x>0 and y<0) or (x<0 and y<0):
+            self.angle += 180
+        if x<0 and y>0:
+            self.angle += 360
+        
+        self.target /= m.sqrt(self.target[0]**2 + self.target[1]**2)
+        self.pos += self.target*35
+
+        pos = self.pos
+        if self.angle > 0 and self.angle <= 90:
+            pos = self.pos
+        if self.angle > 90 and self.angle <= 180:
+            pos = self.pos - [0, np.cos((180-self.angle)*m.pi/180)*size[1]]
+        if self.angle > 180 and self.angle <= 270:
+            pos = self.pos - [np.sin((self.angle-180)*m.pi/180)*size[1], np.cos((180-self.angle)*m.pi/180)*size[1]]
+        if self.angle > 270 and self.angle <= 360:
+            pos = self.pos - [np.sin((self.angle-180)*m.pi/180)*size[1], 0]
+        self.pos = pos
+        self.center = self.pos + [self.image.get_width()/2, self.image.get_height()/2]
+        self.dmg = dmg
         self.moveHitbox()
         
 
