@@ -38,7 +38,7 @@ magic = {
             "duration" : 1,
             "interval" : 1
         },
-        "level" : 1,
+        "level" : 0,
         "upgrades" : [
             ("size", .1),
             ("dmg", .3),
@@ -60,18 +60,17 @@ magic = {
             "size" : 1,
             "interval" : 1
         },
-        "level" : 1,
+        "level" : 0,
         "upgrades" : [
-            ("", ),
-            ("", ),
-            ("", ),
-            ("", ),
-            ("", ),
-            ("", ),
-            ("", ),
+            ("size", .15),
+            ("dmg", .3),
+            ("size", .15),
+            ("dmg", .3),
+            ("size", .25),
+            ("dmg", .5),
             #Traits
         ],
-        "max" : 1
+        "max" : 7
     }
 }
 

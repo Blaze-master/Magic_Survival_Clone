@@ -1,5 +1,5 @@
 enemySpeed = 0.8
-sprinterSpeed = 5 #1.5
+sprinterSpeed = 1.5 #1.5
 enemyHp = 30
 enemyDmg = 10
 

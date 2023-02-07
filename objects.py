@@ -203,6 +203,11 @@ class Zone(NonPlayerObject):
         self.dmg = dmg
         self.duration = duration
         self.moveHitbox()
+    
+    def respawn(self, coord):
+        self.image = pg.transform.rescale(self.image, (self.rad/2,self.rad/2))
+        self.pos = coord - (self.rad,self.rad)
+        self.moveHitbox()
 
 class MovingZone(Zone):
     def __init__(self, position, images, dmg, diameter, duration, target, speed, gSpeed):

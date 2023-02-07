@@ -99,14 +99,14 @@ while running:
         if event.type == pg.QUIT:
             running = False
         if not lvlUp:
-            if keyMove:
-                if not pause:
+            if not pause:
+                if keyMove:
                     direct = checkMovement(direct, event)
-                if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_SPACE:
-                        pause = not pause
-            if event.type == pg.MOUSEBUTTONDOWN and mouseMove:
-                pause = not pause
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    mouseMove = not mouseMove
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    pause = not pause
     
     if pause or lvlUp:
         direct = []
@@ -212,30 +212,32 @@ while running:
                     break
         
         #Lavazone movement & damage o(n^2)
-        magic["lavazone"]["interval"][0] += gameSpeed*magic["lavazone"]["multiplier"]["interval"]/trueSpeed
-        for i,lavazone in enumerate(lavazones):
-            if keyMove: lavazones[i].move(direct, playerSpeed)
-            if mouseMove: lavazones[i].mouseMove(mouseDir, playerSpeed)
-            lavazones[i].draw(screen)
+        if  magic["lavazone"]["level"] > 0:
+            magic["lavazone"]["interval"][0] += gameSpeed*magic["lavazone"]["multiplier"]["interval"]/trueSpeed
+            for i,lavazone in enumerate(lavazones):
+                if keyMove: lavazones[i].move(direct, playerSpeed)
+                if mouseMove: lavazones[i].mouseMove(mouseDir, playerSpeed)
+                lavazones[i].draw(screen)
 
-            lavazones[i].duration -= gameSpeed/trueSpeed
-            if lavazone.duration <= 0:
-                del lavazones[i]
-                continue
-            if magic["lavazone"]["interval"][0] >= magic["lavazone"]["interval"][1]:
-                for j,enemy in enumerate(enemies):
-                    if ballCollision(lavazones[i], enemy):
-                        enemies[j].hp -= (lavazone.dmg*magic["lavazone"]["multiplier"]["dmg"])
-                magic["lavazone"]["interval"][0] = 0
+                lavazones[i].duration -= gameSpeed/trueSpeed
+                if lavazone.duration <= 0:
+                    del lavazones[i]
+                    continue
+                if magic["lavazone"]["interval"][0] >= magic["lavazone"]["interval"][1]:
+                    for j,enemy in enumerate(enemies):
+                        if ballCollision(lavazones[i], enemy):
+                            enemies[j].hp -= (lavazone.dmg*magic["lavazone"]["multiplier"]["dmg"])
+                    magic["lavazone"]["interval"][0] = 0
         
         #Electric zone damage
-        magic["electric_zone"]["interval"][0] += gameSpeed*magic["electric_zone"]["multiplier"]["interval"]/trueSpeed
-        if magic["electric_zone"]["interval"][0] >= magic["electric_zone"]["interval"][1]:
-            for i,enemy in enumerate(enemies):
-                if ballCollision(electricZone, enemy):
-                    enemies[i].hp -= (electricZone.dmg*magic["electric_zone"]["multiplier"]["dmg"])
-            magic["electric_zone"]["interval"][0] = 0
-        electricZone.draw(screen)
+        if magic["electric_zone"]["level"] > 0:
+            magic["electric_zone"]["interval"][0] += gameSpeed*magic["electric_zone"]["multiplier"]["interval"]/trueSpeed
+            if magic["electric_zone"]["interval"][0] >= magic["electric_zone"]["interval"][1]:
+                for i,enemy in enumerate(enemies):
+                    if ballCollision(electricZone, enemy):
+                        enemies[i].hp -= (electricZone.dmg*magic["electric_zone"]["multiplier"]["dmg"])
+                magic["electric_zone"]["interval"][0] = 0
+            electricZone.draw(screen)
         
         #Enemy Death
         for j,enemy in enumerate(enemies):
@@ -319,7 +321,7 @@ while running:
             magic["magic_bullet"]["cd"][0] = 0
 
         magic["lavazone"]["cd"][0] += gameSpeed*magic["lavazone"]["multiplier"]["cd"]/trueSpeed
-        if magic["lavazone"]["cd"][0] >= magic["lavazone"]["cd"][1]:
+        if magic["lavazone"]["cd"][0] >= magic["lavazone"]["cd"][1] and magic["lavazone"]["level"] > 0:
             pos = (np.random.rand(2) * [xmax, ymax]) - lavaSize
             lavazones.append(spawnObj("lavazone", [
                 pos,
@@ -387,18 +389,30 @@ while running:
         for i,upgrade in enumerate(options):
             if inBox(mousePos, upgrade.box) and not upgrade.highlighted:
                 options[i].highlight()
+                optionScroll = i
             if upgrade.highlighted and not inBox(mousePos, upgrade.box):
                 options[i].highlight()
             options[i].draw(screen)
         for event in events:
             if event.type == pg.MOUSEBUTTONDOWN:
                 for i,upgrade in enumerate(options):
-                    if inBox(mousePos, upgrade.box):
+                    if upgrade.highlighted:
                         mag = magic[upgrade.magic]
                         up = mag["upgrades"][mag["level"]-1]
                         magic[upgrade.magic]["multiplier"][up[0]] += up[1]
                         magic[upgrade.magic]["level"] += 1
-                        lvlUp = False        
+                        lvlUp = False 
+
+                        if upgrade.magic=="electric_zone" and up[0]=="size":
+                            size = magic["electric_zone"]["size"] * magic["electric_zone"]["multiplier"]["size"]
+                            electricZone = Zone(
+                                (player.center-[size/2, size/2]),
+                                ["electric_zone.png"],
+                                magic["electric_zone"]["dmg"],
+                                size,
+                                np.inf,
+                                gameSpeed
+                                )
         pg.display.update()
         if not lvlUp:
             options = []
