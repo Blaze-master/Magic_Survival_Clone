@@ -60,10 +60,19 @@ def spawnObj(objType, props=[]):
     if objType=="lavazone":
         return Zone(props[0], props[1], props[2], props[3], props[4], gameSpeed)
     if objType=="arcane_ray":
-        pass
+        return Line(props[0], props[1], props[2], props[3], props[4], props[5], props[6], gameSpeed)
 
 def magnitude(vec):
     return m.sqrt(m.pow(vec[0],2)+m.pow(vec[1],2))
+
+def getClosest(array, target):
+    closest = []
+    for obj in array:
+        dist = obj.center-target
+        dist = magnitude(dist)
+        closest.append(dist)
+    closest = np.array([closest]).argmin()
+    return closest
 
 def boxCollision(obj1, obj2):
     X1 = obj1.hitbox[1][0] < obj2.hitbox[0][0]
@@ -97,7 +106,7 @@ def lineCollision(obj, line):
     d = magnitude([vec[0]-obj.center[0],vec[1]-obj.center[1]])
     # print(d, vec)
     # print(line.hitbox)
-    return d < line.thickness+obj.rad and (inBox(vec, line.hitbox) or boxCollision(line, obj))
+    return d < line.thickness+obj.rad # and (inBox(vec, line.hitbox) or boxCollision(line, obj))
 
 def lineBoxCollision(obj, line):
     d1 = distToLine(obj.hitbox[0], line.center, line.angle)

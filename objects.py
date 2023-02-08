@@ -125,7 +125,7 @@ class Enemy(NonPlayerObject):
         self.rad = (self.image.get_width()/2) + -5 #10, slightly bigger than the sprite's actual radius
         self.trueRad = self.image.get_width()/2
         self.center = self.pos+self.rad
-        self.mana = 2
+        self.mana = 5
     
     def mainMove(self, target):
         center = np.array(target) - [self.image.get_width()/2, self.image.get_height()/2]

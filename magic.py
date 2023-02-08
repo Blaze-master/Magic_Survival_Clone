@@ -71,6 +71,32 @@ magic = {
             #Traits
         ],
         "max" : 7
+    },
+
+    "arcane_ray" : {
+        "dmg" : 110,
+        "duration" : .8,
+        "num" : 1,
+        "cd" : [0, 3.8],
+        "size" : [1,650],
+        "level" : 0,
+        "max" : 9,
+        "multiplier" : {
+            "dmg" : 1,
+            "duration" : 1,
+            "num" : 1,
+            "cd" : 1,
+        },
+        "upgrades" : [
+            ("num", 1),
+            ("dmg", .3),
+            ("duration", .5),
+            ("num", 2),
+            ("dmg", .3),
+            ("cd", .2),
+            ("num", 3),
+            ("dmg", .5),
+        ],
     }
 }
 

@@ -225,6 +225,7 @@ while running:
                 if lavazone.duration <= 0:
                     del lavazones[i]
                     continue
+
                 if magic["lavazone"]["interval"][0] >= magic["lavazone"]["interval"][1]:
                     for j,enemy in enumerate(enemies):
                         if ballCollision(lavazones[i], enemy):
@@ -241,18 +242,21 @@ while running:
                 magic["electric_zone"]["interval"][0] = 0
             electricZone.draw(screen)
         
-        for i,ray in enumerate(arcane_rays):
-            arcane_rays[i].draw(screen)
+        #Arcane ray damage
+        if magic["arcane_ray"]["level"] > 0:
+            for i,ray in enumerate(arcane_rays):
+                arcane_rays[i].draw(screen)
 
-            arcane_rays[i].duration -= gameSpeed/trueSpeed
-            if arcane_rays[i].duration <= 0:
-                del arcane_rays[i]
-                continue
+                arcane_rays[i].duration -= gameSpeed/trueSpeed
+                if arcane_rays[i].duration <= 0:
+                    del arcane_rays[i]
+                    continue
 
-            for j,enemy in enumerate(enemies):
-                if lineCollision(enemy, ray) and (not id(enemy) in ray.hits):
-                    arcane_rays[i].hits.append(id(enemy))
-                    enemies[j].hp -= ray.dmg
+                for j,enemy in enumerate(enemies):
+                    if boxCollision(enemy, arcane_rays[i]):
+                        if lineCollision(enemy, ray) and (not id(enemy) in ray.hits):
+                            arcane_rays[i].hits.append(id(enemy))
+                            enemies[j].hp -= ray.dmg*magic["arcane_ray"]["multiplier"]["dmg"]
         
         #Enemy Death
         for j,enemy in enumerate(enemies):
@@ -303,24 +307,6 @@ while running:
             if chest_spawn == 10 and len(chests) < max_chests:
                 chests.append(spawnObj("chest"))
             
-            if ticks%10 == 0 and len(enemies)>0:
-                closest = []
-                for enemy in enemies:
-                    dist = enemy.center-player.center
-                    dist = magnitude(dist)
-                    closest.append(dist)
-                closest = np.array([closest]).argmin()
-                arcane_rays.append(Line(
-                    player.center,
-                    "arcane_ray.png",
-                    100,
-                    1,
-                    [1,650],
-                    0,
-                    enemies[closest].center,
-                    gameSpeed
-                ))
-            
             #Player damage (takes damage only every 5 ticks)
             if plyrDmgCd<ticks:
                 for enemy in enemies:
@@ -366,6 +352,26 @@ while running:
                 magic["lavazone"]["duration"]*magic["lavazone"]["multiplier"]["duration"]
                 ]))
             magic["lavazone"]["cd"][0] = 0
+
+        #Arcane ray
+        magic["arcane_ray"]["cd"][0] += gameSpeed*magic["arcane_ray"]["multiplier"]["cd"]/trueSpeed
+        if magic["arcane_ray"]["cd"][0] >= magic["lavazone"]["cd"][1] and magic["arcane_ray"]["level"] > 0 and len(enemies) > 0:
+            copy = enemies
+            for n in range(round(magic["arcane_ray"]["num"]*magic["arcane_ray"]["multiplier"]["num"])):
+                if len(copy)<1: break
+                closest = getClosest(copy, player.center)
+                arcane_rays.append(spawnObj("arcane_ray", [
+                    player.center,
+                    "arcane_ray.png",
+                    magic["arcane_ray"]["dmg"],
+                    magic["arcane_ray"]["duration"]*magic["arcane_ray"]["multiplier"]["duration"],
+                    magic["arcane_ray"]["size"],
+                    1,
+                    copy[closest].center,
+                ]))
+                copy.pop(closest)
+            magic["arcane_ray"]["cd"][0] = 0
+            
 
         #Mana level up
         if player.mana["amt"] >= player.mana["cap"]:
@@ -418,6 +424,8 @@ while running:
             chests[i].changeSpeed(gameSpeed)
         for i,obj in enumerate(magic_bullets):
             magic_bullets[i].changeSpeed(gameSpeed)
+        for i,obj in enumerate(lavazones):
+            lavazones[i].changeSpeed(gameSpeed)
     
     elif lvlUp:
         mousePos = mousePos = np.array(pg.mouse.get_pos())
@@ -434,7 +442,8 @@ while running:
                     if upgrade.highlighted:
                         mag = magic[upgrade.magic]
                         up = mag["upgrades"][mag["level"]-1]
-                        magic[upgrade.magic]["multiplier"][up[0]] += up[1]
+                        if mag["level"]>0:
+                            magic[upgrade.magic]["multiplier"][up[0]] += up[1]
                         magic[upgrade.magic]["level"] += 1
                         lvlUp = False 
 
