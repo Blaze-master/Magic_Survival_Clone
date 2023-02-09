@@ -75,7 +75,7 @@ magic = {
 
     "arcane_ray" : {
         "dmg" : 110,
-        "duration" : .8,
+        "duration" : 0.8,
         "num" : 1,
         "cd" : [0, 3.8],
         "size" : [1,650],

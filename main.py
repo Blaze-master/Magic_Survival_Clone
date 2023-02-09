@@ -3,7 +3,6 @@ import random as rd
 import math as m
 import time
 import os
-import random as rd
 import numpy as np
 from pygame import mixer
 import matplotlib.pyplot as plt
@@ -257,7 +256,7 @@ while running:
                         if lineCollision(enemy, ray) and (not id(enemy) in ray.hits):
                             arcane_rays[i].hits.append(id(enemy))
                             enemies[j].hp -= ray.dmg*magic["arcane_ray"]["multiplier"]["dmg"]
-        
+
         #Enemy Death
         for j,enemy in enumerate(enemies):
             if enemies[j].hp <= 0:
@@ -265,7 +264,6 @@ while running:
                 manaBar.setLength(player.mana["amt"], player.mana["cap"])
                 enemies.remove(enemy)
                 score += 1
-
         
         #Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
@@ -291,11 +289,11 @@ while running:
                 fps[1].append(trueSpeed/gameSpeed)
 
             #Enemy spawn
-            if ticks%1 == 0:
-                n = 1
+            if ticks%2 == 0:
+                n = 2
                 for _ in range(n):
                     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
-                # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
+                enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
 
             #Mana spawn
             mana_spawn = rd.randint(1, 5)
@@ -311,7 +309,7 @@ while running:
             if plyrDmgCd<ticks:
                 for enemy in enemies:
                     if ballCollision(player, enemy):
-                        # player.hp -= enemy.dmg
+                        player.hp -= enemy.dmg
                         healthBar.setLength(player.hp, 100)
                         plyrDmgCd = ticks + 5
                         if player.hp <= 0:
@@ -319,7 +317,7 @@ while running:
                         break
 
         #Attack cooldowns
-        #Magic Bullet
+        #Magic Bullet spawn
         magic["magic_bullet"]["cd"][0] += gameSpeed*magic["magic_bullet"]["multiplier"]["cd"]/trueSpeed
         if magic["magic_bullet"]["cd"][0] >= magic["magic_bullet"]["cd"][1]:
             #Magic bullet spawn o(n)
@@ -340,7 +338,7 @@ while running:
                 )
             magic["magic_bullet"]["cd"][0] = 0
 
-        #Lavazone
+        #Lavazone spawn
         magic["lavazone"]["cd"][0] += gameSpeed*magic["lavazone"]["multiplier"]["cd"]/trueSpeed
         if magic["lavazone"]["cd"][0] >= magic["lavazone"]["cd"][1] and magic["lavazone"]["level"] > 0:
             pos = (np.random.rand(2) * [xmax, ymax]) - magic["lavazone"]["size"]*magic["lavazone"]["multiplier"]["size"]
@@ -353,7 +351,7 @@ while running:
                 ]))
             magic["lavazone"]["cd"][0] = 0
 
-        #Arcane ray
+        #Arcane ray spawn
         magic["arcane_ray"]["cd"][0] += gameSpeed*magic["arcane_ray"]["multiplier"]["cd"]/trueSpeed
         if magic["arcane_ray"]["cd"][0] >= magic["lavazone"]["cd"][1] and magic["arcane_ray"]["level"] > 0 and len(enemies) > 0:
             copy = enemies
@@ -363,11 +361,11 @@ while running:
                 arcane_rays.append(spawnObj("arcane_ray", [
                     player.center,
                     "arcane_ray.png",
-                    magic["arcane_ray"]["dmg"],
-                    magic["arcane_ray"]["duration"]*magic["arcane_ray"]["multiplier"]["duration"],
+                    copy[closest].center,
                     magic["arcane_ray"]["size"],
                     1,
-                    copy[closest].center,
+                    magic["arcane_ray"]["dmg"],
+                    magic["arcane_ray"]["duration"]*magic["arcane_ray"]["multiplier"]["duration"],
                 ]))
                 copy.pop(closest)
             magic["arcane_ray"]["cd"][0] = 0
@@ -405,6 +403,7 @@ while running:
         healthBar.draw(screen)
 
         pg.display.update()
+        pg.display.flip()
         timer += 1
 
         #FPS Limiter

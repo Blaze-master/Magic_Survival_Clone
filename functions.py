@@ -60,10 +60,10 @@ def spawnObj(objType, props=[]):
     if objType=="lavazone":
         return Zone(props[0], props[1], props[2], props[3], props[4], gameSpeed)
     if objType=="arcane_ray":
-        return Line(props[0], props[1], props[2], props[3], props[4], props[5], props[6], gameSpeed)
+        return ArcaneRay(props[0], props[1], props[2], props[3], props[4], props[5], props[6], gameSpeed)
 
 def magnitude(vec):
-    return m.sqrt(m.pow(vec[0],2)+m.pow(vec[1],2))
+    return m.sqrt((vec[0]**2)+(vec[1]**2))
 
 def getClosest(array, target):
     closest = []
@@ -94,8 +94,7 @@ def inRange(rad, cen1, cen2):
     return distance < rad
 
 def distToLine(objPoint, point, angle):
-    angle = (360-angle)+90
-    angle /= (180/np.pi)
+    angle = ((360-angle)+90)/(180/np.pi)
     m = np.tan(angle)
     x = ((objPoint[1]-point[1])+((objPoint[0]+point[0]*m**2)/m))/((1+m**2)/m)
     y = point[1]+m*(x-point[0])
@@ -104,8 +103,6 @@ def distToLine(objPoint, point, angle):
 def lineCollision(obj, line):
     vec = distToLine(obj.center, line.center, line.angle)
     d = magnitude([vec[0]-obj.center[0],vec[1]-obj.center[1]])
-    # print(d, vec)
-    # print(line.hitbox)
     return d < line.thickness+obj.rad # and (inBox(vec, line.hitbox) or boxCollision(line, obj))
 
 def lineBoxCollision(obj, line):

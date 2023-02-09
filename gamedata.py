@@ -1,5 +1,5 @@
 #Constants
-fpsLimit = 60 #60
+fpsLimit = 60+2 #60
 trueSpeed = 300 #300
 gameSpeed = trueSpeed/fpsLimit
 playerSpeed = 1.0

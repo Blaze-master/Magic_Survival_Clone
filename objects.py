@@ -220,41 +220,55 @@ class MovingZone(Zone):
         self.moveHitbox()
 
 class Line(NonPlayerObject):
-    def __init__(self, position, image, dmg, duration, size, thickness, target, gSpeed):
+    def __init__(self, position, image, target, size, thickness, gSpeed):
         super().__init__(position, image, gSpeed)
-        self.duration = duration
-        self.hits = []
-        self.size = size
-        self.thickness = thickness
-        self.image = pg.transform.scale(self.image, size)
         self.target = target-self.pos
+        self.image = pg.transform.scale(self.image, size)
         self.angle = np.arctan(self.target[0]/self.target[1]) * (180/m.pi)
         self.image = pg.transform.rotate(self.image, self.angle)
+        self.thickness = thickness
+        self.size = size
 
         x,y = self.target[0],self.target[1]
-        if x>0 and y>0:
-            self.angle = self.angle
         if (x>0 and y<0) or (x<0 and y<0):
             self.angle += 180
         if x<0 and y>0:
             self.angle += 360
         
-        self.target /= m.sqrt(self.target[0]**2 + self.target[1]**2)
-        self.pos += self.target*35
-
-        pos = self.pos
-        if self.angle > 0 and self.angle <= 90:
-            pos = self.pos
         if self.angle > 90 and self.angle <= 180:
-            pos = self.pos - [0, np.cos((180-self.angle)*m.pi/180)*size[1]]
+            self.pos -= [0, np.cos((180-self.angle)*m.pi/180)*size[1]]
         if self.angle > 180 and self.angle <= 270:
-            pos = self.pos - [np.sin((self.angle-180)*m.pi/180)*size[1], np.cos((180-self.angle)*m.pi/180)*size[1]]
+            self.pos -= [np.sin((self.angle-180)*m.pi/180)*size[1], np.cos((180-self.angle)*m.pi/180)*size[1]]
         if self.angle > 270 and self.angle <= 360:
-            pos = self.pos - [np.sin((self.angle-180)*m.pi/180)*size[1], 0]
-        self.pos = pos
-        self.center = self.pos + [self.image.get_width()/2, self.image.get_height()/2]
-        self.dmg = dmg
+            self.pos -= [np.sin((self.angle-180)*m.pi/180)*size[1], 0]
+        
         self.moveHitbox()
+
+    def draw(self, screen, showImage, colour):
+        if showImage:
+            super().draw(screen)
+        else:
+            start, end = [], []
+            if (self.angle > 0 and self.angle <= 90) or (self.angle > 180 and self.angle <= 270):
+                start, end = self.hitbox[0], self.hitbox[1]
+            if (self.angle > 90 and self.angle <= 180) or (self.angle > 270 and self.angle <= 360):
+                start, end = self.hitbox[0]+[0,self.image.get_height()], self.hitbox[1]-[0,self.image.get_height()]
+            pg.draw.line(screen, colour, start, end)
+
+class ArcaneRay(Line):
+    def __init__(self, position, image, target, size, thickness, dmg, duration, gSpeed):
+        super().__init__(position, image, target, size, thickness, gSpeed)
+
+        self.duration = duration
+        self.hits = []
+        self.dmg = dmg
+        self.target /= m.sqrt(self.target[0]**2 + self.target[1]**2)
+        self.pos += self.target*30
+        self.moveHitbox()
+        
+    def draw(self, screen):
+        super().draw(screen, False, (200,0,200))
+
         
 
 if __name__ == "__main__": pass
