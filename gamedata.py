@@ -32,11 +32,12 @@ fs_xmin, fs_ymin = -fsx, -fsy
 fs_xmax, fs_ymax = fsx+xmax, fsy+ymax
 
 fontType = "freesansbold.ttf"
-fontSize = 50
+mainFontSize = 40
+subFontSize = 15
 textWidth = 600
 textHeight = 100
 textMargin = 50
-textPadding = (20, (textHeight-fontSize)/2)
+textPadding = (20, (textHeight-60)/2)
 textX = (xmax-textWidth)/2
 textY = (ymax-((textHeight*3) + (textMargin*2)))/2
 

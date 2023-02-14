@@ -66,12 +66,8 @@ def magnitude(vec):
     return m.sqrt((vec[0]**2)+(vec[1]**2))
 
 def getClosest(array, target):
-    closest = []
-    for obj in array:
-        dist = obj.center-target
-        dist = magnitude(dist)
-        closest.append(dist)
-    closest = np.array([closest]).argmin()
+    closest = map(lambda x : magnitude(x.center-target), array)
+    closest = np.array(list(closest)).argmin()
     return closest
 
 def boxCollision(obj1, obj2):
@@ -93,8 +89,8 @@ def inRange(rad, cen1, cen2):
     distance = magnitude([cen1[0]-cen2[0], cen1[1]-cen2[1]])
     return distance < rad
 
-def distToLine(objPoint, point, angle):
-    angle = ((360-angle)+90)/(180/np.pi)
+def distToLine(objPoint, point, angle): #angle represents pygame rotation angle
+    angle = ((360-angle)+90)/(180/np.pi) #converted to numpy angle
     m = np.tan(angle)
     x = ((objPoint[1]-point[1])+((objPoint[0]+point[0]*m**2)/m))/((1+m**2)/m)
     y = point[1]+m*(x-point[0])
@@ -116,5 +112,25 @@ def lineBoxCollision(obj, line):
     d4 /= np.abs(d4)
     con = d1==d2 and d2==d3 and d3==d4
     return (not con) and (boxCollision(line, obj))
+
+def decipherUpgrade(magic):
+    lvl = magic["level"]
+    if lvl>0:
+        upgrade = magic["upgrades"][lvl-1]
+        convDic = {
+            "dmg" : "Damage",
+            "spd" : "Speed",
+            "size" : "Size",
+            "int" : "Interval",
+            "cd" : "Cooldown",
+            "dur" : "Duration",
+            "num" : "Number"
+        }
+        change = "reduces" if upgrade=="dur" or upgrade=="cd" else "increases"
+        upgradeText = convDic[upgrade[0]]
+        val = upgrade[1] if upgrade[0]=="num" else str(int(upgrade[1]*100))+"%"
+        return f"{upgradeText} {change} by {val}"
+    else:
+        return magic["description"]
 
 if __name__ == "__main__": pass
