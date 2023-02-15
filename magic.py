@@ -87,7 +87,7 @@ magic = {
         "mul" : {
             "dmg" : 1,
             "dur" : 1,
-            "num" : 1,
+            "num" : 0,
             "cd" : 1,
         },
         "upgrades" : [
@@ -102,6 +102,35 @@ magic = {
             #Traits
         ],
         "description" : "Fires a ray that penetrates all objects"
+    },
+
+    "blizzard" : {
+        "dmg" : 100,
+        "rad" : 50,
+        "num" : 20,
+        "cd" : [0, 6.0],
+        "spd" : 4.5,
+        "mul" : {
+            "dmg" : 1,
+            "rad" : 1,
+            "num" : 0,
+            "cd" : 1,
+            "spd" : 1
+        },
+        "level" : 0,
+        "max" : 9,
+        "upgrades" : [
+            ("num", 6),
+            ("dmg", .3),
+            ("cd", .1),
+            ("num", 6),
+            ("dmg", .3),
+            ("cd", .2),
+            ("num", 10),
+            ("dmg", .5)
+            #Traits
+        ],
+        "description" : "Creates an ice storm to freeze enemies"
     }
 }
 

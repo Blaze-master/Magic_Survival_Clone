@@ -41,4 +41,6 @@ textPadding = (20, (textHeight-60)/2)
 textX = (xmax-textWidth)/2
 textY = (ymax-((textHeight*3) + (textMargin*2)))/2
 
+blizRad = 300
+
 if __name__ == "__main__": pass

@@ -70,6 +70,7 @@ healthBar = Bar((player.pos+np.array([-3, 50])), "health_bar.png", 30, 4)
 healthBar.setLength(player.hp, 100)
 
 #Attacks
+explosions = []
 magic_bullets = []
 lavazones = []
 electricZone = Zone(
@@ -81,6 +82,7 @@ electricZone = Zone(
     gameSpeed
     )
 arcane_rays = []
+blizzards, blizNum = [], 0
 
 direct = []
 if graph: fps = [[],[]]
@@ -203,8 +205,6 @@ while running:
             if not inBox(magic_bullets[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
                 del magic_bullets[i]
                 continue
-            
-            magic_bullets[i].draw(screen) #Potential optimization if put at the end of loop
 
             #Enemy hit
             for j,enemy in enumerate(enemies):
@@ -233,8 +233,6 @@ while running:
                 if lavazone.duration <= 0:
                     del lavazones[i]
                     continue
-
-                lavazones[i].draw(screen)
         
         #Electric zone damage
         if magic["electric_zone"]["level"] > 0:
@@ -244,7 +242,6 @@ while running:
                     if ballCollision(electricZone, enemy):
                         enemies[i].hp -= (electricZone.dmg*magic["electric_zone"]["mul"]["dmg"])
                 magic["electric_zone"]["int"][0] = 0
-            electricZone.draw(screen)
         
         #Arcane ray damage
         if magic["arcane_ray"]["level"] > 0:
@@ -259,8 +256,33 @@ while running:
                 if arcane_rays[i].duration <= 0:
                     del arcane_rays[i]
                     continue
+        
+        #Blizzard movement and damage
+        if magic["blizzard"]["level"] > 0:
+            for i,blizzard in enumerate(blizzards):
+                if keyMove: blizzards[i].move(direct, playerSpeed)
+                if mouseMove: blizzards[i].mouseMove(mouseDir, playerSpeed)
+                blizzards[i].mainMove()
 
-                arcane_rays[i].draw(screen)
+                #Target hit
+                if inBox(blizzards[i].tarPoint.pos, blizzards[i].hitbox):
+                    explosions.append(spawnObj(
+                        "explosion",
+                        [
+                            blizzards[i].tarPoint.pos,
+                            None,
+                            magic["blizzard"]["rad"]*magic["blizzard"]["mul"]["rad"],
+                            magic["blizzard"]["dmg"]*magic["blizzard"]["mul"]["dmg"],
+                        ]))
+                    del blizzards[i]
+                    continue
+
+        #Explosions
+        for i,exp in enumerate(explosions):
+            for j,enemy in enumerate(enemies):
+                if ballCollision(exp, enemy):
+                    enemies[j].hp -= exp.dmg
+            explosions.remove(exp)
 
         #Enemy Death
         for j,enemy in enumerate(enemies):
@@ -282,6 +304,19 @@ while running:
                     enemies[i].pos += move
             enemies[i].draw(screen)
 
+
+        #Draw attacks
+        if magic["electric_zone"]["level"]>0: electricZone.draw(screen)
+        for i,p in enumerate(magic_bullets):
+            magic_bullets[i].draw(screen)
+        for i,p in enumerate(lavazones):
+            lavazones[i].draw(screen)
+        for i,p in enumerate(arcane_rays):
+            arcane_rays[i].draw(screen)
+        for i,p in enumerate(blizzards):
+            blizzards[i].draw(screen)
+
+
         #Event ticks
         #Tick rate Manager
         tmp = int(round((trueSpeed/gameSpeed)/10))
@@ -294,7 +329,7 @@ while running:
                 fps[1].append(trueSpeed/gameSpeed)
 
             #Enemy spawn
-            if ticks%2 == 0:
+            if ticks%4 == 0:
                 n = 2
                 for _ in range(n):
                     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
@@ -310,6 +345,15 @@ while running:
                 chest_spawn = rd.randint(1, 5)
                 if chest_spawn == 5 and len(chests) < max_chests:
                     chests.append(spawnObj("chest"))
+            
+            #Blizzard spawning sequence
+            if blizNum>0:
+                blizzards.append(spawnObj("blizzard", [
+                    "blizzard.png",
+                    magic["blizzard"]["spd"]*magic["blizzard"]["mul"]["spd"],
+                    player.center
+                ]))
+                blizNum -= 1
             
             #Player damage (takes damage only every 5 ticks)
             if plyrDmgCd<ticks:
@@ -356,9 +400,9 @@ while running:
         #Arcane ray spawn
         if magic["arcane_ray"]["level"] > 0:
             magic["arcane_ray"]["cd"][0] += gameSpeed*magic["arcane_ray"]["mul"]["cd"]/trueSpeed
-            if magic["arcane_ray"]["cd"][0] >= magic["lavazone"]["cd"][1] and magic["arcane_ray"]["level"] > 0 and len(enemies) > 0:
+            if magic["arcane_ray"]["cd"][0] >= magic["arcane_ray"]["cd"][1] and len(enemies) > 0:
                 copy = enemies
-                for n in range(round(magic["arcane_ray"]["num"]*magic["arcane_ray"]["mul"]["num"])):
+                for n in range(round(magic["arcane_ray"]["num"]+magic["arcane_ray"]["mul"]["num"])):
                     if len(copy)<1: break
                     closest = getClosest(copy, player.center)
                     arcane_rays.append(spawnObj("arcane_ray", [
@@ -372,6 +416,13 @@ while running:
                     ]))
                     copy.pop(closest)
                 magic["arcane_ray"]["cd"][0] = 0
+        
+        #Blizzard spawn
+        if magic["blizzard"]["level"]>0:
+            magic["blizzard"]["cd"][0] += gameSpeed*magic["blizzard"]["mul"]["cd"]/trueSpeed
+            if magic["blizzard"]["cd"][0] >= magic["blizzard"]["cd"][1]:
+                blizNum = magic["blizzard"]["num"]+magic["blizzard"]["mul"]["num"]
+                magic["blizzard"]["cd"][0] = 0
             
 
         #Mana level up
@@ -454,7 +505,7 @@ while running:
                     optionScroll += 1
                 if event.key==pg.K_RETURN:
                     selected = True
-                optionScroll = 0  if optionScroll>2 else 2 if optionScroll<0 else optionScroll
+                optionScroll = 0  if optionScroll>len(options)-1 else len(options)-1 if optionScroll<0 else optionScroll
         #Checks for mouse click on upgrades
             if event.type==pg.MOUSEBUTTONDOWN:
                 for i,upgrade in enumerate(options):

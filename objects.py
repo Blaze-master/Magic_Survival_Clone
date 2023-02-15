@@ -35,14 +35,18 @@ class Text:
 class Object:
     def __init__(self, position, image):
         self.pos = np.array(position, dtype="float64")
-        self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image))
+        self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image)) if image else None
         self.moveHitbox()
         self.dim = self.hitbox[1] - self.hitbox[0]
         self.animType = {}
     
     def moveHitbox(self):
-        self.hitbox = np.array([self.pos,self.pos+[self.image.get_width(),self.image.get_height()]])
-        self.center = self.pos+[self.image.get_width()/2, self.image.get_height()/2]
+        if self.image:
+            self.hitbox = np.array([self.pos,self.pos+[self.image.get_width(),self.image.get_height()]])
+            self.center = self.pos+[self.image.get_width()/2, self.image.get_height()/2]
+        else:
+            self.hitbox = self.pos
+            self.center = self.pos
 
     def loadImage(self, image):
         self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image))
@@ -270,6 +274,28 @@ class ArcaneRay(Line):
     def draw(self, screen):
         super().draw(screen, False, (200,0,200))
 
+class Explosion(NonPlayerObject):
+    def __init__(self, position, image, rad, dmg, gSpeed):
+        super().__init__(position, image, gSpeed)
+        self.rad = rad
+        self.dmg = dmg
+
+class Bombard(Projectile):
+    def __init__(self, position, image, target, speed, gSpeed):
+        self.tarPoint = Background(target, None, gSpeed)
+        super().__init__(position, image, target, speed, None, gSpeed)
+    
+    def move(self, direction, pSpeed):
+        super().move(direction, pSpeed)
+        self.tarPoint.move(direction, pSpeed)
+    
+    def mouseMove(self, direction, pSpeed):
+        super().mouseMove(direction, pSpeed)
+        self.tarPoint.mouseMove(direction, pSpeed)
+    
+    def changeSpeed(self, speed):
+        super().changeSpeed(speed)
+        self.tarPoint.changeSpeed(speed)
         
 
 if __name__ == "__main__": pass
