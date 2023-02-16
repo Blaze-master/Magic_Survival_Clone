@@ -17,7 +17,7 @@ from enemies import *
 #Metrics for recording passage of time
 timer = 0 #Frame counter
 ticks = 0 #1/10th of a second
-graph = False
+graph = True
 
 pg.init()
 
@@ -83,6 +83,7 @@ electricZone = Zone(
     )
 arcane_rays = []
 blizzards, blizNum = [], 0
+cyclones = []
 
 direct = []
 if graph: fps = [[],[]]
@@ -276,6 +277,28 @@ while running:
                         ]))
                     del blizzards[i]
                     continue
+        
+        #Cyclone movement & damage o(n^2)
+        if  magic["cyclone"]["level"] > 0:
+            magic["cyclone"]["int"][0] += gameSpeed*magic["cyclone"]["mul"]["int"]/trueSpeed
+            for i,cyclone in enumerate(cyclones):
+                if keyMove: cyclones[i].move(direct, playerSpeed)
+                if mouseMove: cyclones[i].mouseMove(mouseDir, playerSpeed)
+                cyclones[i].mainMove()
+                cyclones[i].grow(gameSpeed/trueSpeed)
+
+                #Damage
+                if magic["cyclone"]["int"][0] >= magic["cyclone"]["int"][1]:
+                    for j,enemy in enumerate(enemies):
+                        if ballCollision(cyclones[i], enemy):
+                            enemies[j].hp -= (cyclone.dmg*magic["cyclone"]["mul"]["dmg"])
+                    magic["cyclone"]["int"][0] = 0
+                
+                #Duration
+                cyclones[i].duration -= gameSpeed/trueSpeed
+                if cyclone.duration <= 0:
+                    del cyclones[i]
+                    continue
 
         #Explosions
         for i,exp in enumerate(explosions):
@@ -299,7 +322,7 @@ while running:
                 if(i>j) and ballCollision(enemy, other): #changed i!=j to i>j to cut execution time in half
                     dist = enemy.center - other.center
                     res = magnitude(dist)
-                    factor = enemy.rad*2/res             
+                    factor = (enemy.rad+other.rad)/res             
                     move = dist*(factor-1)/2 #10
                     enemies[i].pos += move
             enemies[i].draw(screen)
@@ -315,6 +338,8 @@ while running:
             arcane_rays[i].draw(screen)
         for i,p in enumerate(blizzards):
             blizzards[i].draw(screen)
+        for i,p in enumerate(cyclones):
+            cyclones[i].draw(screen)
 
 
         #Event ticks
@@ -345,15 +370,6 @@ while running:
                 chest_spawn = rd.randint(1, 5)
                 if chest_spawn == 5 and len(chests) < max_chests:
                     chests.append(spawnObj("chest"))
-            
-            #Blizzard spawning sequence
-            if blizNum>0:
-                blizzards.append(spawnObj("blizzard", [
-                    "blizzard.png",
-                    magic["blizzard"]["spd"]*magic["blizzard"]["mul"]["spd"],
-                    player.center
-                ]))
-                blizNum -= 1
             
             #Player damage (takes damage only every 5 ticks)
             if plyrDmgCd<ticks:
@@ -419,11 +435,39 @@ while running:
         
         #Blizzard spawn
         if magic["blizzard"]["level"]>0:
-            magic["blizzard"]["cd"][0] += gameSpeed*magic["blizzard"]["mul"]["cd"]/trueSpeed
-            if magic["blizzard"]["cd"][0] >= magic["blizzard"]["cd"][1]:
-                blizNum = magic["blizzard"]["num"]+magic["blizzard"]["mul"]["num"]
-                magic["blizzard"]["cd"][0] = 0
+            if blizNum<=0:
+                magic["blizzard"]["cd"][0] += gameSpeed*magic["blizzard"]["mul"]["cd"]/trueSpeed
+                if magic["blizzard"]["cd"][0] >= magic["blizzard"]["cd"][1]:
+                    blizNum = magic["blizzard"]["num"]+magic["blizzard"]["mul"]["num"]
+                    magic["blizzard"]["cd"][0] = 0
+            else: #Blizzard spawning sequence
+                magic["blizzard"]["int"][0] += gameSpeed*magic["blizzard"]["mul"]["int"]/trueSpeed
+                if magic["blizzard"]["int"][0] >= magic["blizzard"]["int"][1]:
+                    blizzards.append(spawnObj("blizzard", [
+                        "blizzard.png",
+                        magic["blizzard"]["spd"]*magic["blizzard"]["mul"]["spd"],
+                        player.center
+                    ]))
+                    blizNum -= 1
+                    magic["blizzard"]["int"][0] = 0
             
+        #Cyclone spawn
+        if magic["cyclone"]["level"] > 0:
+            magic["cyclone"]["cd"][0] += gameSpeed*magic["cyclone"]["mul"]["cd"]/trueSpeed
+            if magic["cyclone"]["cd"][0] >= magic["cyclone"]["cd"][1] and magic["cyclone"]["level"] > 0:
+                closest = enemies[getClosest(enemies, player.center)]
+                cyclones.append(spawnObj("cyclone", [
+                    player.center,
+                    ["cyclone.png"],
+                    closest.center,
+                    magic["cyclone"]["spd"]*magic["cyclone"]["mul"]["spd"],
+                    magic["cyclone"]["dmg"],
+                    magic["cyclone"]["size"]*magic["cyclone"]["mul"]["size"],
+                    magic["cyclone"]["dur"]*magic["cyclone"]["mul"]["dur"],
+                    magic["cyclone"]["growth"].append(magic["cyclone"]["mul"]["size"])
+                    ]))
+                magic["cyclone"]["cd"][0] = 0
+
 
         #Mana level up
         if player.mana["amt"] >= player.mana["cap"]:
@@ -482,6 +526,10 @@ while running:
             magic_bullets[i].changeSpeed(gameSpeed)
         for i,obj in enumerate(lavazones):
             lavazones[i].changeSpeed(gameSpeed)
+        for i,obj in enumerate(blizzards):
+            blizzards[i].changeSpeed(gameSpeed)
+        for i,obj in enumerate(cyclones):
+            cyclones[i].changeSpeed(gameSpeed)
     
     #Level up display
     elif lvlUp:

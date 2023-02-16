@@ -35,7 +35,7 @@ class Text:
 class Object:
     def __init__(self, position, image):
         self.pos = np.array(position, dtype="float64")
-        self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image)) if image else None
+        self.image = self.loadImage(image) if image else None
         self.moveHitbox()
         self.dim = self.hitbox[1] - self.hitbox[0]
         self.animType = {}
@@ -49,7 +49,7 @@ class Object:
             self.center = self.pos
 
     def loadImage(self, image):
-        self.image = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image))
+        return pg.image.load(os.path.join(os.path.dirname(__file__),"assets", image))
     
     def runAnimation(self):
         pass
@@ -215,15 +215,25 @@ class Zone(NonPlayerObject):
         self.pos = coord - (self.rad,self.rad)
         self.moveHitbox()
 
-class MovingZone(Zone):
-    def __init__(self, position, images, dmg, diameter, duration, target, speed, gSpeed):
-        super().__init__(position, images, dmg, diameter, duration, gSpeed)
-        self.target = target
-        self.moveSpeed = speed
-
-    def mainMove(self):
-        self.pos += self.target*self.moveSpeed*self.speed
+class MovingZone(Projectile):
+    def __init__(self, position, image, target, speed, dmg, diameter, duration, growth, gSpeed):
+        super().__init__(position, image[0], target, speed, dmg, gSpeed)
+        self.image = pg.transform.scale(self.image, (diameter, diameter))
+        self.imgName = image[0]
+        self.rad = diameter/2
+        self.dmg = dmg
+        self.duration = duration
+        self.growth = growth
         self.moveHitbox()
+    
+    def grow(self, timer):
+        self.growth[0] += timer
+        if self.growth[0]>=self.growth[1]:
+            self.rad += self.growth[2]
+            self.image = pg.transform.scale(self.loadImage(self.imgName), (self.rad*2,self.rad*2))
+            self.pos -= self.growth[2]
+            self.moveHitbox()
+            self.growth[0] = 0
 
 class Line(NonPlayerObject):
     def __init__(self, position, image, target, size, thickness, gSpeed):

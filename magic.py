@@ -110,12 +110,14 @@ magic = {
         "num" : 20,
         "cd" : [0, 6.0],
         "spd" : 4.5,
+        "int" : [0, .1],
         "mul" : {
             "dmg" : 1,
             "rad" : 1,
             "num" : 0,
             "cd" : 1,
-            "spd" : 1
+            "spd" : 1,
+            "int" : 1
         },
         "level" : 0,
         "max" : 9,
@@ -131,7 +133,39 @@ magic = {
             #Traits
         ],
         "description" : "Creates an ice storm to freeze enemies"
-    }
+    },
+
+    "cyclone" : {
+        "dmg" : 60,
+        "cd" : [0, 2.8],
+        "int" : [0, .25],
+        "size" : 50.0,
+        "dur" : 1.9,
+        "spd" : 0.5,
+        "growth" : [0, 0.1],
+        "mul" : {
+            "dmg" : 1,
+            "cd" : 1,
+            "size" : 1,
+            "dur" : 1,
+            "int" : 1,
+            "spd" : 1,
+        },
+        "level" : 0,
+        "max" : 1,
+        "upgrades" : [
+            ("dur", .2)
+            ("dmg", .3)
+            ("cd", .1)
+            ("dur", .3)
+            ("dmg", .3)
+            ("int", .2)
+            ("dur", .5)
+            ("dmg", .5)
+            #Traits
+        ],
+        "description" : "Casts an expanding whirlwind"
+    },
 }
 
 availableMagic = [x if magic[x]["level"] < magic[x]["max"] else None for x in magic.keys()]
