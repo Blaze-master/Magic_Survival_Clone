@@ -200,6 +200,11 @@ class Projectile(NonPlayerObject):
         self.pos += self.target*self.moveSpeed*self.speed
         self.moveHitbox()
 
+class PiercingProjectile(Projectile):
+    def __init__(self, position, image, target, speed, dmg, gSpeed):
+        self.thickness = self.loadImage(image).get_width()
+        super().__init__(position, image, target, speed, dmg, gSpeed)
+        self.hits = []
 
 class Zone(NonPlayerObject):
     def __init__(self, position, images, dmg, diameter, duration, gSpeed):

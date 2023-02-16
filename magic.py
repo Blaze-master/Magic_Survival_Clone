@@ -11,7 +11,7 @@ magic = {
             "cd" : 1
         },
         "level" : 1,
-        "max" : 8,
+        "max" : 8, #8
         "upgrades" : [
             ("dmg", .2),
             ("cd", .2),
@@ -40,7 +40,7 @@ magic = {
             "int" : 1
         },
         "level" : 0,
-        "max" : 7,
+        "max" : 7, #7
         "upgrades" : [
             ("size", .1),
             ("dmg", .3),
@@ -63,7 +63,7 @@ magic = {
             "int" : 1
         },
         "level" : 0,
-        "max" : 7,
+        "max" : 7, #7
         "upgrades" : [
             ("size", .15),
             ("dmg", .3),
@@ -83,7 +83,7 @@ magic = {
         "cd" : [0, 3.8],
         "size" : [1,650],
         "level" : 0,
-        "max" : 9,
+        "max" : 9, #9
         "mul" : {
             "dmg" : 1,
             "dur" : 1,
@@ -120,7 +120,7 @@ magic = {
             "int" : 1
         },
         "level" : 0,
-        "max" : 9,
+        "max" : 9, #9
         "upgrades" : [
             ("num", 6),
             ("dmg", .3),
@@ -152,19 +152,46 @@ magic = {
             "spd" : 1,
         },
         "level" : 0,
-        "max" : 1,
+        "max" : 9, #9
         "upgrades" : [
-            ("dur", .2)
-            ("dmg", .3)
-            ("cd", .1)
-            ("dur", .3)
-            ("dmg", .3)
-            ("int", .2)
-            ("dur", .5)
-            ("dmg", .5)
+            ("dur", .2),
+            ("dmg", .3),
+            ("cd", .1),
+            ("dur", .3),
+            ("dmg", .3),
+            ("int", .2),
+            ("dur", .5),
+            ("dmg", .5),
             #Traits
         ],
         "description" : "Casts an expanding whirlwind"
+    },
+
+    "electric_shock": {
+        "dmg" : 75,
+        "spd" : 3,
+        "cd" : [0, 1.5], #[time since last attack, cooldown]
+        "num" : 2,
+        "mul" : {
+            "dmg" : 1,
+            "spd" : 1,
+            "cd" : 1,
+            "num" : 0
+        },
+        "level" : 0,
+        "max" : 9, #9
+        "upgrades" : [
+            ("num", 2),
+            ("dmg", .3),
+            ("cd", .1),
+            ("num", 2),
+            ("dmg", .3),
+            ("cd", .2),
+            ("num", 3),
+            ("dmg", .5),
+            #Traits
+        ],
+        "description" : "Thunderstorm will shock enemies in a random direction"
     },
 }
 

@@ -17,7 +17,7 @@ from enemies import *
 #Metrics for recording passage of time
 timer = 0 #Frame counter
 ticks = 0 #1/10th of a second
-graph = True
+graph = False
 
 pg.init()
 
@@ -84,6 +84,7 @@ electricZone = Zone(
 arcane_rays = []
 blizzards, blizNum = [], 0
 cyclones = []
+e_shocks, min_shocks = [], 1
 
 direct = []
 if graph: fps = [[],[]]
@@ -299,6 +300,24 @@ while running:
                 if cyclone.duration <= 0:
                     del cyclones[i]
                     continue
+        
+        #Electric shock movement & damage
+        for i,e_shock in enumerate(e_shocks):
+            if keyMove: e_shocks[i].move(direct, playerSpeed)
+            if mouseMove: e_shocks[i].mouseMove(mouseDir, playerSpeed)
+            e_shocks[i].mainMove()
+            
+            #electric shock despawns if out of range
+            if not inBox(e_shocks[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
+                del e_shocks[i]
+                continue
+
+            #Enemy hit
+            for j,enemy in enumerate(enemies):
+                if (not id(enemy) in e_shocks[i].hits) and boxCollision(enemy, e_shocks[i]):
+                    if lineCollision(enemy, e_shocks[i]):
+                        enemies[j].hp -= (e_shock.dmg*magic["electric_shock"]["mul"]["dmg"])
+                        e_shocks[i].hits.append(id(enemy))
 
         #Explosions
         for i,exp in enumerate(explosions):
@@ -340,6 +359,8 @@ while running:
             blizzards[i].draw(screen)
         for i,p in enumerate(cyclones):
             cyclones[i].draw(screen)
+        for i,p in enumerate(e_shocks):
+            e_shocks[i].draw(screen)
 
 
         #Event ticks
@@ -454,8 +475,10 @@ while running:
         #Cyclone spawn
         if magic["cyclone"]["level"] > 0:
             magic["cyclone"]["cd"][0] += gameSpeed*magic["cyclone"]["mul"]["cd"]/trueSpeed
-            if magic["cyclone"]["cd"][0] >= magic["cyclone"]["cd"][1] and magic["cyclone"]["level"] > 0:
+            if magic["cyclone"]["cd"][0] >= magic["cyclone"]["cd"][1] and len(enemies) > 0:
                 closest = enemies[getClosest(enemies, player.center)]
+                g = magic["cyclone"]["growth"][:]
+                g.append(magic["cyclone"]["mul"]["size"])
                 cyclones.append(spawnObj("cyclone", [
                     player.center,
                     ["cyclone.png"],
@@ -464,9 +487,26 @@ while running:
                     magic["cyclone"]["dmg"],
                     magic["cyclone"]["size"]*magic["cyclone"]["mul"]["size"],
                     magic["cyclone"]["dur"]*magic["cyclone"]["mul"]["dur"],
-                    magic["cyclone"]["growth"].append(magic["cyclone"]["mul"]["size"])
+                    g
                     ]))
                 magic["cyclone"]["cd"][0] = 0
+        
+        #Electric shock spawn
+        if magic["electric_shock"]["level"] > 0:
+            magic["electric_shock"]["cd"][0] += gameSpeed*magic["electric_shock"]["mul"]["cd"]/trueSpeed
+            if magic["electric_shock"]["cd"][0] >= magic["electric_shock"]["cd"][1] and len(enemies) > 0:
+                # num = round(magic["electric_shock"]["num"]+magic["electric_shock"]["mul"]["num"])
+                num = rd.randint(min_shocks, round(magic["electric_shock"]["num"]+magic["electric_shock"]["mul"]["num"]))
+                for n in range(num):
+                    target = np.random.rand(2) * [xmax, ymax]
+                    e_shocks.append(spawnObj("electric_shock", [
+                        player.center,
+                        "electric_shock.png",
+                        target,
+                        magic["electric_shock"]["spd"]*magic["electric_shock"]["mul"]["spd"],
+                        magic["electric_shock"]["dmg"]
+                    ]))
+                magic["electric_shock"]["cd"][0] = 0
 
 
         #Mana level up

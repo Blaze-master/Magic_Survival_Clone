@@ -70,6 +70,8 @@ def spawnObj(objType, props=[]):
         return Bombard(pos-[150,500], props[0], pos, props[1], gameSpeed)
     if objType=="cyclone":
         return MovingZone(props[0], props[1], props[2], props[3], props[4], props[5], props[6], props[7], gameSpeed)
+    if objType=="electric_shock":
+        return PiercingProjectile(props[0], props[1], props[2], props[3], props[4], gameSpeed)
 
 def magnitude(vec):
     return m.sqrt((vec[0]**2)+(vec[1]**2))
