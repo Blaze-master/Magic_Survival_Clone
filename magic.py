@@ -5,10 +5,12 @@ magic = {
         "dmg" : 35.0,
         "spd" : 4.0,
         "cd" : [0, .62], #[time since last attack, cooldown]
+        "pen" : 1,
         "mul" : {
             "dmg" : 1,
             "spd" : 1,
-            "cd" : 1
+            "cd" : 1,
+            "pen" : 0
         },
         "level" : 1,
         "max" : 8, #8
@@ -23,7 +25,8 @@ magic = {
             ("dmg", .5)
             #Traits
         ],
-        "description" : "Fires a magic bullet"
+        "description" : "Fires a magic bullet",
+        "deets" : ["main_move", "despawn", "pen", "box_col"]
     },
 
     "lavazone" : {
@@ -50,7 +53,8 @@ magic = {
             ("dmg", .5)
             #Traits
         ],
-        "description" : "Creates a lava zone that damages enemies for a certain period of time"
+        "description" : "Creates a lava zone that damages enemies for a certain period of time",
+        "deets" : ["ball_col"]
     },
 
     "electric_zone" : {
@@ -73,7 +77,8 @@ magic = {
             ("dmg", .5),
             #Traits
         ],
-        "description" : "Creates a thunderstorm electric circle to continuously damage enemies"
+        "description" : "Creates a thunderstorm electric circle to continuously damage enemies",
+        "deets" : ["static", "ball_col"]
     },
 
     "arcane_ray" : {
@@ -101,7 +106,8 @@ magic = {
             ("dmg", .5),
             #Traits
         ],
-        "description" : "Fires a ray that penetrates all objects"
+        "description" : "Fires a ray that penetrates all objects",
+        "deets" : ["static", "line_col"]
     },
 
     "blizzard" : {
@@ -132,7 +138,8 @@ magic = {
             ("dmg", .5)
             #Traits
         ],
-        "description" : "Creates an ice storm to freeze enemies"
+        "description" : "Creates an ice storm to freeze enemies",
+        "deets" : ["main_move", "bombard"]
     },
 
     "cyclone" : {
@@ -164,7 +171,8 @@ magic = {
             ("dmg", .5),
             #Traits
         ],
-        "description" : "Casts an expanding whirlwind"
+        "description" : "Casts an expanding whirlwind",
+        "deets" : ["main_move", "despawn", "ball_col", "expand"]
     },
 
     "electric_shock": {
@@ -191,7 +199,8 @@ magic = {
             ("dmg", .5),
             #Traits
         ],
-        "description" : "Thunderstorm will shock enemies in a random direction"
+        "description" : "Thunderstorm will shock enemies in a random direction",
+        "deets" : ["main_move", "despawn", "line_col"]
     },
 }
 

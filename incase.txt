@@ -1,0 +1,121 @@
+        #Magic bullet movement & damage o(n^2)
+        # for i,bullet in enumerate(magic_bullets):
+        #     if keyMove: magic_bullets[i].move(direct, playerSpeed)
+        #     if mouseMove: magic_bullets[i].mouseMove(mouseDir, playerSpeed)
+        #     magic_bullets[i].mainMove()
+            
+        #     #magic_bullet despawns if out of range
+        #     if not inBox(magic_bullets[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
+        #         del magic_bullets[i]
+        #         continue
+
+        #     #Enemy hit
+        #     for j,enemy in enumerate(enemies):
+        #         if boxCollision(magic_bullets[i], enemy):
+        #             enemies[j].hp -= (bullet.dmg*magic["magic_bullet"]["mul"]["dmg"])
+        #             del magic_bullets[i]
+        #             break
+        
+        #Lavazone movement & damage o(n^2)
+        # if  magic["lavazone"]["level"] > 0:
+        #     magic["lavazone"]["int"][0] += gameSpeed*magic["lavazone"]["mul"]["int"]/trueSpeed
+        #     for i,lavazone in enumerate(lavazones):
+        #         if keyMove: lavazones[i].move(direct, playerSpeed)
+        #         if mouseMove: lavazones[i].mouseMove(mouseDir, playerSpeed)
+
+        #         #Damage
+        #         if magic["lavazone"]["int"][0] >= magic["lavazone"]["int"][1]:
+        #             for j,enemy in enumerate(enemies):
+        #                 if ballCollision(lavazones[i], enemy):
+        #                     enemies[j].hp -= (lavazone.dmg*magic["lavazone"]["mul"]["dmg"])
+        #             magic["lavazone"]["int"][0] = 0
+                
+        #         #Duration
+        #         lavazones[i].duration -= gameSpeed/trueSpeed
+        #         if lavazone.duration <= 0:
+        #             del lavazones[i]
+        #             continue
+        
+        #Electric zone damage
+        # if magic["electric_zone"]["level"] > 0:
+        #     magic["electric_zone"]["int"][0] += gameSpeed*magic["electric_zone"]["mul"]["int"]/trueSpeed
+        #     if magic["electric_zone"]["int"][0] >= magic["electric_zone"]["int"][1]:
+        #         for i,enemy in enumerate(enemies):
+        #             if ballCollision(electricZone, enemy):
+        #                 enemies[i].hp -= (electricZone.dmg*magic["electric_zone"]["mul"]["dmg"])
+        #         magic["electric_zone"]["int"][0] = 0
+        
+        #Arcane ray damage
+        # if magic["arcane_ray"]["level"] > 0:
+        #     for i,ray in enumerate(arcane_rays):
+        #         for j,enemy in enumerate(enemies):
+        #             if (not id(enemy) in ray.hits) and boxCollision(enemy, arcane_rays[i]):
+        #                 if lineCollision(enemy, ray):
+        #                     arcane_rays[i].hits.append(id(enemy))
+        #                     enemies[j].hp -= ray.dmg*magic["arcane_ray"]["mul"]["dmg"]
+
+        #         arcane_rays[i].duration -= gameSpeed/trueSpeed
+        #         if arcane_rays[i].duration <= 0:
+        #             del arcane_rays[i]
+        #             continue
+        
+        #Blizzard movement and damage
+        # if magic["blizzard"]["level"] > 0:
+        #     for i,blizzard in enumerate(blizzards):
+        #         if keyMove: blizzards[i].move(direct, playerSpeed)
+        #         if mouseMove: blizzards[i].mouseMove(mouseDir, playerSpeed)
+        #         blizzards[i].mainMove()
+
+        #         #Target hit
+        #         if inBox(blizzards[i].tarPoint.pos, blizzards[i].hitbox):
+        #             explosions.append(spawnObj(
+        #                 "explosion",
+        #                 [
+        #                     blizzards[i].tarPoint.pos,
+        #                     None,
+        #                     magic["blizzard"]["rad"]*magic["blizzard"]["mul"]["rad"],
+        #                     magic["blizzard"]["dmg"]*magic["blizzard"]["mul"]["dmg"],
+        #                 ]))
+        #             del blizzards[i]
+        #             continue
+        
+        #Cyclone movement & damage o(n^2)
+        # if  magic["cyclone"]["level"] > 0:
+        #     magic["cyclone"]["int"][0] += gameSpeed*magic["cyclone"]["mul"]["int"]/trueSpeed
+        #     for i,cyclone in enumerate(cyclones):
+        #         if keyMove: cyclones[i].move(direct, playerSpeed)
+        #         if mouseMove: cyclones[i].mouseMove(mouseDir, playerSpeed)
+        #         cyclones[i].mainMove()
+        #         cyclones[i].grow(gameSpeed/trueSpeed)
+
+        #         #Damage
+        #         if magic["cyclone"]["int"][0] >= magic["cyclone"]["int"][1]:
+        #             for j,enemy in enumerate(enemies):
+        #                 if ballCollision(cyclones[i], enemy):
+        #                     enemies[j].hp -= (cyclone.dmg*magic["cyclone"]["mul"]["dmg"])
+                #     magic["cyclone"]["int"][0] = 0
+                
+                # #Duration
+                # cyclones[i].duration -= gameSpeed/trueSpeed
+                # if cyclone.duration <= 0:
+                #     del cyclones[i]
+                #     continue
+        
+        #Electric shock movement & damage
+        # if magic["electric_shock"]["level"] > 0:
+        #     for i,e_shock in enumerate(e_shocks):
+        #         if keyMove: e_shocks[i].move(direct, playerSpeed)
+        #         if mouseMove: e_shocks[i].mouseMove(mouseDir, playerSpeed)
+        #         e_shocks[i].mainMove()
+                
+        #         #electric shock despawns if out of range
+        #         if not inBox(e_shocks[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
+        #             del e_shocks[i]
+        #             continue
+
+        #         #Enemy hit
+        #         for j,enemy in enumerate(enemies):
+        #             if (not id(enemy) in e_shocks[i].hits) and boxCollision(enemy, e_shocks[i]):
+        #                 if lineCollision(enemy, e_shocks[i]):
+        #                     enemies[j].hp -= (e_shock.dmg*magic["electric_shock"]["mul"]["dmg"])
+        #                     e_shocks[i].hits.append(id(enemy))

@@ -70,21 +70,17 @@ healthBar = Bar((player.pos+np.array([-3, 50])), "health_bar.png", 30, 4)
 healthBar.setLength(player.hp, 100)
 
 #Attacks
+attacks = {x : [] for x in magic.keys()} #All attacks integrated into one dictionary
 explosions = []
-magic_bullets = []
-lavazones = []
-electricZone = Zone(
+attacks["electric_zone"].append(Zone(
     (player.center-[magic["electric_zone"]["size"]/2, magic["electric_zone"]["size"]/2]),
     ["electric_zone.png"],
-    magic["electric_zone"]["dmg"],
     magic["electric_zone"]["size"],
     np.inf,
     gameSpeed
-    )
-arcane_rays = []
-blizzards, blizNum = [], 0
-cyclones = []
-e_shocks, min_shocks = [], 1
+    ))
+blizNum = 0
+min_shocks = 1
 
 direct = []
 if graph: fps = [[],[]]
@@ -196,128 +192,73 @@ while running:
             if not inBox(enemies[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
                 del enemies[i]
                 continue
-
-        #Magic bullet movement & damage o(n^2)
-        for i,bullet in enumerate(magic_bullets):
-            if keyMove: magic_bullets[i].move(direct, playerSpeed)
-            if mouseMove: magic_bullets[i].mouseMove(mouseDir, playerSpeed)
-            magic_bullets[i].mainMove()
-            
-            #magic_bullet despawns if out of range
-            if not inBox(magic_bullets[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
-                del magic_bullets[i]
-                continue
-
-            #Enemy hit
-            for j,enemy in enumerate(enemies):
-                if boxCollision(magic_bullets[i], enemy):
-                    enemies[j].hp -= (bullet.dmg*magic["magic_bullet"]["mul"]["dmg"])
-                    del magic_bullets[i]
-                    break
-
         
-        #Lavazone movement & damage o(n^2)
-        if  magic["lavazone"]["level"] > 0:
-            magic["lavazone"]["int"][0] += gameSpeed*magic["lavazone"]["mul"]["int"]/trueSpeed
-            for i,lavazone in enumerate(lavazones):
-                if keyMove: lavazones[i].move(direct, playerSpeed)
-                if mouseMove: lavazones[i].mouseMove(mouseDir, playerSpeed)
-
-                #Damage
-                if magic["lavazone"]["int"][0] >= magic["lavazone"]["int"][1]:
+        #Execute movement and damage for all attacks
+        for mag in attacks.keys():
+            if magic[mag]["level"]>0:
+                for i,att in enumerate(attacks[mag]):
+                    det = magic[mag]["deets"]
+                    #Movement and despawn
+                    if not "static" in det:
+                        if keyMove: attacks[mag][i].move(direct, playerSpeed)
+                        if mouseMove: attacks[mag][i].mouseMove(mouseDir, playerSpeed)
+                    if "main_move" in det:
+                        attacks[mag][i].mainMove()
+                    if "despawn" in det:
+                        if not inBox(attacks[mag][i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
+                            del attacks[mag][i]
+                            continue
+                    if "expand" in det:
+                        attacks[mag][i].grow(gameSpeed/trueSpeed)
+                    
+                    dead = False
+                    #Timers
+                    interval = "int" in magic[mag].keys()
+                    duration = "dur" in magic[mag].keys()
+                    int_over = False
+                    if interval:
+                        magic[mag]["int"][0] += gameSpeed*magic[mag]["mul"]["int"]/trueSpeed
+                        if magic[mag]["int"][0]>=magic[mag]["int"][1]:
+                            int_over = True
+                            magic[mag]["int"][0] = 0
+                    if duration:
+                        attacks[mag][i].duration -= gameSpeed/trueSpeed
+                        dead = attacks[mag][i].duration<=0
+                    
+                    #Damage
+                    pen = "pen" in magic[mag].keys()
                     for j,enemy in enumerate(enemies):
-                        if ballCollision(lavazones[i], enemy):
-                            enemies[j].hp -= (lavazone.dmg*magic["lavazone"]["mul"]["dmg"])
-                    magic["lavazone"]["int"][0] = 0
-                
-                #Duration
-                lavazones[i].duration -= gameSpeed/trueSpeed
-                if lavazone.duration <= 0:
-                    del lavazones[i]
-                    continue
-        
-        #Electric zone damage
-        if magic["electric_zone"]["level"] > 0:
-            magic["electric_zone"]["int"][0] += gameSpeed*magic["electric_zone"]["mul"]["int"]/trueSpeed
-            if magic["electric_zone"]["int"][0] >= magic["electric_zone"]["int"][1]:
-                for i,enemy in enumerate(enemies):
-                    if ballCollision(electricZone, enemy):
-                        enemies[i].hp -= (electricZone.dmg*magic["electric_zone"]["mul"]["dmg"])
-                magic["electric_zone"]["int"][0] = 0
-        
-        #Arcane ray damage
-        if magic["arcane_ray"]["level"] > 0:
-            for i,ray in enumerate(arcane_rays):
-                for j,enemy in enumerate(enemies):
-                    if (not id(enemy) in ray.hits) and boxCollision(enemy, arcane_rays[i]):
-                        if lineCollision(enemy, ray):
-                            arcane_rays[i].hits.append(id(enemy))
-                            enemies[j].hp -= ray.dmg*magic["arcane_ray"]["mul"]["dmg"]
-
-                arcane_rays[i].duration -= gameSpeed/trueSpeed
-                if arcane_rays[i].duration <= 0:
-                    del arcane_rays[i]
-                    continue
-        
-        #Blizzard movement and damage
-        if magic["blizzard"]["level"] > 0:
-            for i,blizzard in enumerate(blizzards):
-                if keyMove: blizzards[i].move(direct, playerSpeed)
-                if mouseMove: blizzards[i].mouseMove(mouseDir, playerSpeed)
-                blizzards[i].mainMove()
-
-                #Target hit
-                if inBox(blizzards[i].tarPoint.pos, blizzards[i].hitbox):
-                    explosions.append(spawnObj(
-                        "explosion",
-                        [
-                            blizzards[i].tarPoint.pos,
-                            None,
-                            magic["blizzard"]["rad"]*magic["blizzard"]["mul"]["rad"],
-                            magic["blizzard"]["dmg"]*magic["blizzard"]["mul"]["dmg"],
-                        ]))
-                    del blizzards[i]
-                    continue
-        
-        #Cyclone movement & damage o(n^2)
-        if  magic["cyclone"]["level"] > 0:
-            magic["cyclone"]["int"][0] += gameSpeed*magic["cyclone"]["mul"]["int"]/trueSpeed
-            for i,cyclone in enumerate(cyclones):
-                if keyMove: cyclones[i].move(direct, playerSpeed)
-                if mouseMove: cyclones[i].mouseMove(mouseDir, playerSpeed)
-                cyclones[i].mainMove()
-                cyclones[i].grow(gameSpeed/trueSpeed)
-
-                #Damage
-                if magic["cyclone"]["int"][0] >= magic["cyclone"]["int"][1]:
-                    for j,enemy in enumerate(enemies):
-                        if ballCollision(cyclones[i], enemy):
-                            enemies[j].hp -= (cyclone.dmg*magic["cyclone"]["mul"]["dmg"])
-                    magic["cyclone"]["int"][0] = 0
-                
-                #Duration
-                cyclones[i].duration -= gameSpeed/trueSpeed
-                if cyclone.duration <= 0:
-                    del cyclones[i]
-                    continue
-        
-        #Electric shock movement & damage
-        for i,e_shock in enumerate(e_shocks):
-            if keyMove: e_shocks[i].move(direct, playerSpeed)
-            if mouseMove: e_shocks[i].mouseMove(mouseDir, playerSpeed)
-            e_shocks[i].mainMove()
-            
-            #electric shock despawns if out of range
-            if not inBox(e_shocks[i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
-                del e_shocks[i]
-                continue
-
-            #Enemy hit
-            for j,enemy in enumerate(enemies):
-                if (not id(enemy) in e_shocks[i].hits) and boxCollision(enemy, e_shocks[i]):
-                    if lineCollision(enemy, e_shocks[i]):
-                        enemies[j].hp -= (e_shock.dmg*magic["electric_shock"]["mul"]["dmg"])
-                        e_shocks[i].hits.append(id(enemy))
+                        if not interval or (interval and int_over):
+                            if "box_col" in det:
+                                if boxCollision(attacks[mag][i], enemy):
+                                    enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                    if pen: attacks[mag][i].hits.append(id(enemy))
+                            if "ball_col" in det:
+                                if ballCollision(attacks[mag][i], enemy):
+                                    enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                    if pen: attacks[mag][i].hits.append(id(enemy))
+                            if "line_col" in det:
+                                if (not id(enemy) in attacks[mag][i].hits) and boxCollision(enemy, attacks[mag][i]):
+                                    if lineCollision(enemy, attacks[mag][i]):
+                                        enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                        attacks[mag][i].hits.append(id(enemy))
+                            if pen and len(attacks[mag][i].hits)>=magic[mag]["pen"]+magic[mag]["mul"]["pen"]: 
+                                dead = True
+                                break
+                    if "bombard" in det:
+                        if inBox(attacks[mag][i].tarPoint.pos, attacks[mag][i].hitbox):
+                            explosions.append(spawnObj(
+                                "explosion",
+                                [
+                                    attacks[mag][i].tarPoint.pos,
+                                    None,
+                                    magic[mag]["rad"]*magic[mag]["mul"]["rad"],
+                                    magic[mag]["dmg"]*magic[mag]["mul"]["dmg"],
+                                ]))
+                            dead = True
+                    
+                    if dead:
+                        del attacks[mag][i]
 
         #Explosions
         for i,exp in enumerate(explosions):
@@ -346,21 +287,11 @@ while running:
                     enemies[i].pos += move
             enemies[i].draw(screen)
 
-
         #Draw attacks
-        if magic["electric_zone"]["level"]>0: electricZone.draw(screen)
-        for i,p in enumerate(magic_bullets):
-            magic_bullets[i].draw(screen)
-        for i,p in enumerate(lavazones):
-            lavazones[i].draw(screen)
-        for i,p in enumerate(arcane_rays):
-            arcane_rays[i].draw(screen)
-        for i,p in enumerate(blizzards):
-            blizzards[i].draw(screen)
-        for i,p in enumerate(cyclones):
-            cyclones[i].draw(screen)
-        for i,p in enumerate(e_shocks):
-            e_shocks[i].draw(screen)
+        for mag in attacks.keys():
+            if magic[mag]["level"]>0:
+                for att in attacks[mag]:
+                    att.draw(screen)
 
 
         #Event ticks
@@ -404,18 +335,33 @@ while running:
                         break
 
         #Attack cooldowns
+        # for mag in attacks.keys():
+        #     if magic[mag]["level"]>0:
+        #         #Cooldown count
+        #         strike = False
+        #         if "cd" in magic[mag].keys():
+        #             magic[mag]["cd"][0] += gameSpeed*magic[mag]["mul"]["cd"]/trueSpeed
+        #             if magic[mag]["cd"][0]>=magic[mag]["cd"][1]:
+        #                 strike = True
+        #                 magic[mag]["cd"][0] = 0
+        #         if strike:
+        #             if "rd_spawn" in magic[mag]["deets"]:
+        #             else:
+        #                 if len(enemies)>0
+        #             attacks[mag].append(object)
+
+
         #Magic Bullet spawn
         magic["magic_bullet"]["cd"][0] += gameSpeed*magic["magic_bullet"]["mul"]["cd"]/trueSpeed
         if magic["magic_bullet"]["cd"][0] >= magic["magic_bullet"]["cd"][1]:
             #Magic bullet spawn o(n)
             if len(enemies)>0:
                 closest = getClosest(enemies, player.center)
-                magic_bullets.append(spawnObj("magic_bullet", [
+                attacks["magic_bullet"].append(spawnObj("magic_bullet", [
                     player.center,
-                    "bullet.png",
+                    ["bullet.png"],
                     enemies[closest].center,
                     magic["magic_bullet"]["spd"]*magic["magic_bullet"]["mul"]["spd"],
-                    magic["magic_bullet"]["dmg"]
                     ])
                 )
             magic["magic_bullet"]["cd"][0] = 0
@@ -425,10 +371,9 @@ while running:
             magic["lavazone"]["cd"][0] += gameSpeed*magic["lavazone"]["mul"]["cd"]/trueSpeed
             if magic["lavazone"]["cd"][0] >= magic["lavazone"]["cd"][1] and magic["lavazone"]["level"] > 0:
                 pos = (np.random.rand(2) * [xmax, ymax]) - magic["lavazone"]["size"]*magic["lavazone"]["mul"]["size"]
-                lavazones.append(spawnObj("lavazone", [
+                attacks["lavazone"].append(spawnObj("lavazone", [
                     pos,
                     ["lava_zone.png"],
-                    magic["lavazone"]["dmg"],
                     magic["lavazone"]["size"]*magic["lavazone"]["mul"]["size"],
                     magic["lavazone"]["dur"]*magic["lavazone"]["mul"]["dur"]
                     ]))
@@ -442,13 +387,12 @@ while running:
                 for n in range(round(magic["arcane_ray"]["num"]+magic["arcane_ray"]["mul"]["num"])):
                     if len(copy)<1: break
                     closest = getClosest(copy, player.center)
-                    arcane_rays.append(spawnObj("arcane_ray", [
+                    attacks["arcane_ray"].append(spawnObj("arcane_ray", [
                         player.center,
-                        "arcane_ray.png",
+                        ["arcane_ray.png"],
                         copy[closest].center,
                         magic["arcane_ray"]["size"],
                         1,
-                        magic["arcane_ray"]["dmg"],
                         magic["arcane_ray"]["dur"]*magic["arcane_ray"]["mul"]["dur"],
                     ]))
                     copy.pop(closest)
@@ -464,8 +408,8 @@ while running:
             else: #Blizzard spawning sequence
                 magic["blizzard"]["int"][0] += gameSpeed*magic["blizzard"]["mul"]["int"]/trueSpeed
                 if magic["blizzard"]["int"][0] >= magic["blizzard"]["int"][1]:
-                    blizzards.append(spawnObj("blizzard", [
-                        "blizzard.png",
+                    attacks["blizzard"].append(spawnObj("blizzard", [
+                        ["blizzard.png"],
                         magic["blizzard"]["spd"]*magic["blizzard"]["mul"]["spd"],
                         player.center
                     ]))
@@ -477,14 +421,13 @@ while running:
             magic["cyclone"]["cd"][0] += gameSpeed*magic["cyclone"]["mul"]["cd"]/trueSpeed
             if magic["cyclone"]["cd"][0] >= magic["cyclone"]["cd"][1] and len(enemies) > 0:
                 closest = enemies[getClosest(enemies, player.center)]
-                g = magic["cyclone"]["growth"][:]
+                g = magic["cyclone"]["growth"]
                 g.append(magic["cyclone"]["mul"]["size"])
-                cyclones.append(spawnObj("cyclone", [
+                attacks["cyclone"].append(spawnObj("cyclone", [
                     player.center,
                     ["cyclone.png"],
                     closest.center,
                     magic["cyclone"]["spd"]*magic["cyclone"]["mul"]["spd"],
-                    magic["cyclone"]["dmg"],
                     magic["cyclone"]["size"]*magic["cyclone"]["mul"]["size"],
                     magic["cyclone"]["dur"]*magic["cyclone"]["mul"]["dur"],
                     g
@@ -498,13 +441,10 @@ while running:
                 # num = round(magic["electric_shock"]["num"]+magic["electric_shock"]["mul"]["num"])
                 num = rd.randint(min_shocks, round(magic["electric_shock"]["num"]+magic["electric_shock"]["mul"]["num"]))
                 for n in range(num):
-                    target = np.random.rand(2) * [xmax, ymax]
-                    e_shocks.append(spawnObj("electric_shock", [
+                    attacks["electric_shock"].append(spawnObj("electric_shock", [
                         player.center,
-                        "electric_shock.png",
-                        target,
+                        ["electric_shock.png"],
                         magic["electric_shock"]["spd"]*magic["electric_shock"]["mul"]["spd"],
-                        magic["electric_shock"]["dmg"]
                     ]))
                 magic["electric_shock"]["cd"][0] = 0
 
@@ -527,10 +467,7 @@ while running:
                         (mainFontSize, subFontSize),
                         ((255,255,255),(0,255,0)),
                         [textX, textY+(n*(textHeight+textMargin))],
-                        (
-                            mgt+" lvl "+str(magic[mg]["level"]+1),
-                            decipherUpgrade(magic[mg])
-                        ),
+                        (mgt+" lvl "+str(magic[mg]["level"]+1), decipherUpgrade(magic[mg])),
                         mg
                         )
                     options.append(upgrade)
@@ -562,14 +499,10 @@ while running:
             mana_items[i].changeSpeed(gameSpeed)
         for i,obj in enumerate(chests):
             chests[i].changeSpeed(gameSpeed)
-        for i,obj in enumerate(magic_bullets):
-            magic_bullets[i].changeSpeed(gameSpeed)
-        for i,obj in enumerate(lavazones):
-            lavazones[i].changeSpeed(gameSpeed)
-        for i,obj in enumerate(blizzards):
-            blizzards[i].changeSpeed(gameSpeed)
-        for i,obj in enumerate(cyclones):
-            cyclones[i].changeSpeed(gameSpeed)
+        for mag in attacks.keys():
+            if magic[mag]["level"]>0:
+                for i,att in enumerate(attacks[mag]):
+                    attacks[mag][i].changeSpeed(gameSpeed)
     
     #Level up display
     elif lvlUp:
@@ -615,8 +548,8 @@ while running:
                 #Resize Electric Zone
                 if upgrade.magic=="electric_zone" and up[0]=="size":
                     size = magic["electric_zone"]["size"] * magic["electric_zone"]["mul"]["size"]
-                    electricZone.rad = size/2
-                    electricZone.respawn(player.center)
+                    attacks["electric_zone"][0].rad = size/2
+                    attacks["electric_zone"][0].respawn(player.center)
 
         pg.display.update()
         #Refresh available magic upgrades

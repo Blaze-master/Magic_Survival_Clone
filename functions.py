@@ -58,20 +58,21 @@ def spawnObj(objType, props=[]):
     if objType=="explosion":
         return Explosion(props[0], props[1], props[2], props[3], gameSpeed)
     if objType=="magic_bullet":
-        return Projectile(props[0], props[1], props[2], props[3], props[4], gameSpeed)
+        return Projectile(props[0], props[1], props[2], props[3], gameSpeed)
     if objType=="lavazone":
-        return Zone(props[0], props[1], props[2], props[3], props[4], gameSpeed)
+        return Zone(props[0], props[1], props[2], props[3], gameSpeed)
     if objType=="arcane_ray":
-        return ArcaneRay(props[0], props[1], props[2], props[3], props[4], props[5], props[6], gameSpeed)
+        return ArcaneRay(props[0], props[1], props[2], props[3], props[4], props[5], gameSpeed)
     if objType=="blizzard":
         d = rd.randint(0, blizRad)
         a = rd.randint(0, 360)*np.pi/180
         pos = np.array([np.cos(a)*d, np.sin(a)*d]) + props[2]
         return Bombard(pos-[150,500], props[0], pos, props[1], gameSpeed)
     if objType=="cyclone":
-        return MovingZone(props[0], props[1], props[2], props[3], props[4], props[5], props[6], props[7], gameSpeed)
+        return MovingZone(props[0], props[1], props[2], props[3], props[4], props[5], props[6], gameSpeed)
     if objType=="electric_shock":
-        return PiercingProjectile(props[0], props[1], props[2], props[3], props[4], gameSpeed)
+        target = np.random.rand(2) * [xmax, ymax]
+        return PiercingProjectile(props[0], props[1], target, props[2], gameSpeed)
 
 def magnitude(vec):
     return m.sqrt((vec[0]**2)+(vec[1]**2))

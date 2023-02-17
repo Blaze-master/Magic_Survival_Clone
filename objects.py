@@ -187,31 +187,29 @@ class Mana(NonPlayerObject):
         self.mana = 100 if rarity=="large" else 25 if rarity=="medium" else 10
 
 class Projectile(NonPlayerObject):
-    def __init__(self, position, image, target, speed, dmg, gSpeed):
-        super().__init__(position, image, gSpeed)
+    def __init__(self, position, image, target, speed, gSpeed):
+        super().__init__(position, image[0], gSpeed)
         self.target = target-self.pos
         self.target /= m.sqrt(self.target[0]**2 + self.target[1]**2)
         self.angle = np.arctan(self.target[0]/self.target[1]) * (180/m.pi)
         self.image = pg.transform.rotate(self.image, self.angle)
         self.moveSpeed = speed
-        self.dmg = dmg
+        self.hits = []
     
     def mainMove(self):
         self.pos += self.target*self.moveSpeed*self.speed
         self.moveHitbox()
 
 class PiercingProjectile(Projectile):
-    def __init__(self, position, image, target, speed, dmg, gSpeed):
-        self.thickness = self.loadImage(image).get_width()
-        super().__init__(position, image, target, speed, dmg, gSpeed)
-        self.hits = []
+    def __init__(self, position, image, target, speed, gSpeed):
+        self.thickness = self.loadImage(image[0]).get_width()
+        super().__init__(position, image, target, speed, gSpeed)
 
 class Zone(NonPlayerObject):
-    def __init__(self, position, images, dmg, diameter, duration, gSpeed):
+    def __init__(self, position, images, diameter, duration, gSpeed):
         super().__init__(position, images[0], gSpeed)
         self.image = pg.transform.scale(self.image, (diameter, diameter))
         self.rad = diameter/2
-        self.dmg = dmg
         self.duration = duration
         self.moveHitbox()
     
@@ -221,12 +219,11 @@ class Zone(NonPlayerObject):
         self.moveHitbox()
 
 class MovingZone(Projectile):
-    def __init__(self, position, image, target, speed, dmg, diameter, duration, growth, gSpeed):
-        super().__init__(position, image[0], target, speed, dmg, gSpeed)
+    def __init__(self, position, image, target, speed, diameter, duration, growth, gSpeed):
+        super().__init__(position, image, target, speed, gSpeed)
         self.image = pg.transform.scale(self.image, (diameter, diameter))
         self.imgName = image[0]
         self.rad = diameter/2
-        self.dmg = dmg
         self.duration = duration
         self.growth = growth
         self.moveHitbox()
@@ -242,7 +239,7 @@ class MovingZone(Projectile):
 
 class Line(NonPlayerObject):
     def __init__(self, position, image, target, size, thickness, gSpeed):
-        super().__init__(position, image, gSpeed)
+        super().__init__(position, image[0], gSpeed)
         self.target = target-self.pos
         self.image = pg.transform.scale(self.image, size)
         self.angle = np.arctan(self.target[0]/self.target[1]) * (180/m.pi)
@@ -277,11 +274,10 @@ class Line(NonPlayerObject):
             pg.draw.line(screen, colour, start, end)
 
 class ArcaneRay(Line):
-    def __init__(self, position, image, target, size, thickness, dmg, duration, gSpeed):
+    def __init__(self, position, image, target, size, thickness, duration, gSpeed):
         super().__init__(position, image, target, size, thickness, gSpeed)
         self.duration = duration
         self.hits = []
-        self.dmg = dmg
         self.target /= m.sqrt(self.target[0]**2 + self.target[1]**2)
         self.pos += self.target*30
         self.moveHitbox()
@@ -298,7 +294,7 @@ class Explosion(NonPlayerObject):
 class Bombard(Projectile):
     def __init__(self, position, image, target, speed, gSpeed):
         self.tarPoint = Background(target, None, gSpeed)
-        super().__init__(position, image, target, speed, None, gSpeed)
+        super().__init__(position, image, target, speed, gSpeed)
     
     def move(self, direction, pSpeed):
         super().move(direction, pSpeed)
