@@ -73,6 +73,8 @@ def spawnObj(objType, props=[]):
     if objType=="electric_shock":
         target = np.random.rand(2) * [xmax, ymax]
         return PiercingProjectile(props[0], props[1], target, props[2], gameSpeed)
+    if objType=="fireball":
+        return Projectile(props[0], props[1], props[2], props[3], gameSpeed)
 
 def magnitude(vec):
     return m.sqrt((vec[0]**2)+(vec[1]**2))
@@ -136,9 +138,10 @@ def decipherUpgrade(magic):
             "int" : "Interval",
             "cd" : "Cooldown",
             "dur" : "Duration",
-            "num" : "Number"
+            "num" : "Number",
+            "pen" : "Penetration"
         }
-        change = "reduces" if upgrade[0]=="dur" or upgrade[0]=="cd" else "increases"
+        change = "reduces" if upgrade[0]=="int" or upgrade[0]=="cd" else "increases"
         upgradeText = convDic[upgrade[0]]
         val = upgrade[1] if upgrade[0]=="num" else str(int(upgrade[1]*100))+"%"
         return f"{upgradeText} {change} by {val}"

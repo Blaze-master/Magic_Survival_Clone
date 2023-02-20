@@ -17,7 +17,7 @@ from enemies import *
 #Metrics for recording passage of time
 timer = 0 #Frame counter
 ticks = 0 #1/10th of a second
-graph = False
+graph = False #Enable to record fps
 
 pg.init()
 
@@ -212,6 +212,7 @@ while running:
                         attacks[mag][i].grow(gameSpeed/trueSpeed)
                     
                     dead = False
+
                     #Timers
                     interval = "int" in magic[mag].keys()
                     duration = "dur" in magic[mag].keys()
@@ -227,35 +228,45 @@ while running:
                     
                     #Damage
                     pen = "pen" in magic[mag].keys()
+                    hit = False
                     for j,enemy in enumerate(enemies):
                         if not interval or (interval and int_over):
-                            if "box_col" in det:
-                                if boxCollision(attacks[mag][i], enemy):
-                                    enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
-                                    if pen: attacks[mag][i].hits.append(id(enemy))
-                            if "ball_col" in det:
-                                if ballCollision(attacks[mag][i], enemy):
-                                    enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
-                                    if pen: attacks[mag][i].hits.append(id(enemy))
+                            if not pen or (pen and not id(enemy) in attacks[mag][i].hits):
+                                if "box_col" in det:
+                                    if boxCollision(attacks[mag][i], enemy):
+                                        enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                        hit = True
+                                        if pen: attacks[mag][i].hits.append(id(enemy))
+                                if "ball_col" in det:
+                                    if ballCollision(attacks[mag][i], enemy):
+                                        enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                        hit = True
+                                        if pen: attacks[mag][i].hits.append(id(enemy))
                             if "line_col" in det:
                                 if (not id(enemy) in attacks[mag][i].hits) and boxCollision(enemy, attacks[mag][i]):
                                     if lineCollision(enemy, attacks[mag][i]):
                                         enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
                                         attacks[mag][i].hits.append(id(enemy))
+                                        hit = True
                             if pen and len(attacks[mag][i].hits)>=magic[mag]["pen"]+magic[mag]["mul"]["pen"]: 
                                 dead = True
                                 break
+                            
                     if "bombard" in det:
                         if inBox(attacks[mag][i].tarPoint.pos, attacks[mag][i].hitbox):
-                            explosions.append(spawnObj(
-                                "explosion",
-                                [
-                                    attacks[mag][i].tarPoint.pos,
-                                    None,
-                                    magic[mag]["rad"]*magic[mag]["mul"]["rad"],
-                                    magic[mag]["dmg"]*magic[mag]["mul"]["dmg"],
-                                ]))
+                            hit = True
                             dead = True
+                            attacks[mag][i].center = attacks[mag][i].tarPoint.pos
+                    
+                    if "explode" in det and hit:
+                        explosions.append(spawnObj(
+                            "explosion",
+                            [
+                                attacks[mag][i].center,
+                                None,
+                                magic[mag]["rad"]*magic[mag]["mul"]["rad"],
+                                magic[mag]["dmg"]*magic[mag]["mul"]["dmg"],
+                            ]))
                     
                     if dead:
                         del attacks[mag][i]
@@ -318,9 +329,9 @@ while running:
                 mana_items.append(spawnObj("mana item", [attractSpeed]))
 
             #Chest spawn
-            if ticks%2 == 0:
-                chest_spawn = rd.randint(1, 5)
-                if chest_spawn == 5 and len(chests) < max_chests:
+            if ticks%1 == 0:
+                chest_spawn = rd.randint(1, 100)
+                if chest_spawn == 1 and len(chests) < max_chests:
                     chests.append(spawnObj("chest"))
             
             #Player damage (takes damage only every 5 ticks)
@@ -448,12 +459,28 @@ while running:
                     ]))
                 magic["electric_shock"]["cd"][0] = 0
 
+        #Fire ball spawn
+        if magic["fireball"]["level"] > 0:
+            magic["fireball"]["cd"][0] += gameSpeed*magic["fireball"]["mul"]["cd"]/trueSpeed
+            if magic["fireball"]["cd"][0] >= magic["fireball"]["cd"][1]:
+                #Fire ball spawn o(n)
+                if len(enemies)>0:
+                    closest = getClosest(enemies, player.center)
+                    attacks["fireball"].append(spawnObj("fireball", [
+                        player.center,
+                        ["fireball.png"],
+                        enemies[closest].center,
+                        magic["fireball"]["spd"]*magic["fireball"]["mul"]["spd"],
+                        ])
+                    )
+                magic["fireball"]["cd"][0] = 0
+
 
         #Mana level up
         if player.mana["amt"] >= player.mana["cap"]:
             player.mana["amt"] -= player.mana["cap"]
             player.mana["lvl"] += 1
-            player.mana["cap"] += 50
+            player.mana["cap"] += 50 #Mana upgrade rate
 
             avail = False
             for n in range(3):

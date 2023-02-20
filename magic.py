@@ -139,7 +139,7 @@ magic = {
             #Traits
         ],
         "description" : "Creates an ice storm to freeze enemies",
-        "deets" : ["main_move", "bombard"]
+        "deets" : ["main_move", "bombard", "explode"]
     },
 
     "cyclone" : {
@@ -202,7 +202,39 @@ magic = {
         "description" : "Thunderstorm will shock enemies in a random direction",
         "deets" : ["main_move", "despawn", "line_col"]
     },
+
+    "fireball": {
+        "dmg" : 80,
+        "spd" : 2.0,
+        "cd" : [0, .95], #[time since last attack, cooldown]
+        "pen" : 1,
+        "rad" : 50,
+        "mul" : {
+            "dmg" : 1,
+            "spd" : 1,
+            "cd" : 1,
+            "pen" : 0,
+            "rad" : 1
+        },
+        "level" : 0,
+        "max" : 1, #9
+        "upgrades" : [
+            ("", ),
+            #Traits
+        ],
+        "description" : "Shoots a fire ball",
+        "deets" : ["main_move", "despawn", "pen", "box_col", "explode"]
+    },
 }
+
+
+testMagic = None
+if testMagic:
+    for x in magic.keys():
+        if x != testMagic:
+            magic[x]["max"] = 0
+    magic["magic_bullet"]["cd"][1] = np.inf
+    # magic["electric_zone"]["max"] = 1
 
 availableMagic = [x if magic[x]["level"] < magic[x]["max"] else None for x in magic.keys()]
 while None in availableMagic:

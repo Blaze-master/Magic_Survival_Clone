@@ -23,7 +23,7 @@ bg_xmax, bg_ymax = bx+xmax, by+ymax
 
 #Field item spawn and render box
 max_mana = 30 #To increase spawn rate, just increase max mana
-max_chests = 3
+max_chests = 1
 frx, fry = 580, 305
 fsx, fsy = 1160, 610
 fr_xmin, fr_ymin = -frx, -fry
