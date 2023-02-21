@@ -84,11 +84,11 @@ def getClosest(array, target):
     closest = np.array(list(closest)).argmin()
     return closest
 
-def boxCollision(obj1, obj2):
-    X1 = obj1.hitbox[1][0] < obj2.hitbox[0][0]
-    X2 = obj1.hitbox[0][0] > obj2.hitbox[1][0]
-    Y1 = obj1.hitbox[1][1] < obj2.hitbox[0][1]
-    Y2 = obj1.hitbox[0][1] > obj2.hitbox[1][1]
+def boxCollision(box1, box2):
+    X1 = box1[1][0] < box2[0][0]
+    X2 = box1[0][0] > box2[1][0]
+    Y1 = box1[1][1] < box2[0][1]
+    Y2 = box1[0][1] > box2[1][1]
     col = not(X1 or X2) and not(Y1 or Y2)
     return col
 
@@ -139,11 +139,12 @@ def decipherUpgrade(magic):
             "cd" : "Cooldown",
             "dur" : "Duration",
             "num" : "Number",
-            "pen" : "Penetration"
+            "pen" : "Penetration",
+            "rad" : "Explosion radius"
         }
         change = "reduces" if upgrade[0]=="int" or upgrade[0]=="cd" else "increases"
         upgradeText = convDic[upgrade[0]]
-        val = upgrade[1] if upgrade[0]=="num" else str(int(upgrade[1]*100))+"%"
+        val = upgrade[1] if upgrade[0]=="num" or upgrade[0]=="pen" else str(int(upgrade[1]*100))+"%"
         return f"{upgradeText} {change} by {val}"
     else:
         return magic["description"]

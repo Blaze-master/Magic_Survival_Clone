@@ -217,12 +217,19 @@ magic = {
             "rad" : 1
         },
         "level" : 0,
-        "max" : 1, #9
+        "max" : 9, #9
         "upgrades" : [
-            ("", ),
+            ("cd", .1),
+            ("dmg", .3),
+            ("rad", .2),
+            ("cd", .1),
+            ("dmg", .3),
+            ("cd", .2),
+            ("pen", 1),
+            ("dmg", .5),
             #Traits
         ],
-        "description" : "Shoots a fire ball",
+        "description" : "Fires an explosive projectile",
         "deets" : ["main_move", "despawn", "pen", "box_col", "explode"]
     },
 }

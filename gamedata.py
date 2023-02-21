@@ -1,6 +1,6 @@
 #Constants
 fpsLimit = 60 #60
-trueSpeed = 300 #300
+trueSpeed = 200 #300
 gameSpeed = trueSpeed/fpsLimit
 playerSpeed = 1.0
 attractSpeed = 1.6
@@ -10,6 +10,7 @@ total_mana = 0
 #View screen box
 xmax, ymax = 1160, 610
 xmin, ymin = 0, 0
+screenBox = [[xmin,ymin], [xmax,ymax]]
 
 #Enemy render box
 ex, ey = 800, 500

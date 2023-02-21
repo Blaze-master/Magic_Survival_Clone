@@ -193,10 +193,10 @@ class Projectile(NonPlayerObject):
         self.target /= m.sqrt(self.target[0]**2 + self.target[1]**2)
         self.angle = np.arctan(self.target[0]/self.target[1]) * (180/m.pi)
         x,y = self.target[0],self.target[1]
-        if x<0 and y>0:
+        if y>0:
             self.angle += 180
-        if x>0 and y>0:
-            self.angle -= 180
+        # if x>0 and y>0:
+        #     self.angle -= 180
         self.image = pg.transform.rotate(self.image, self.angle)
         self.moveSpeed = speed
         self.hits = []

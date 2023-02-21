@@ -17,7 +17,11 @@ from enemies import *
 #Metrics for recording passage of time
 timer = 0 #Frame counter
 ticks = 0 #1/10th of a second
+
+#Testing variables
 graph = False #Enable to record fps
+fuckIt = False
+immortal = False
 
 pg.init()
 
@@ -131,8 +135,9 @@ while running:
                 [bg_xmin, bg_xmax, bg_ymin, bg_ymax],
                 [xmin, xmax, ymin, ymax]
             )
-
-            background[i].draw(screen)
+            # print(background[i].hitbox, screenBox)
+            if boxCollision(background[i].hitbox, screenBox) or fuckIt:
+                background[i].draw(screen)
         
         #Mana item movement o(n)
         for i, manaObj in enumerate(mana_items):
@@ -150,14 +155,14 @@ while running:
             if inRange(player.pickupRad, player.center, mana_items[i].center):
                 mana_items[i].attract(player.center)
 
-            if boxCollision(player, mana_items[i]):
+            if boxCollision(player.hitbox, mana_items[i].hitbox):
                 player.mana["amt"] += manaObj.mana
                 total_mana += manaObj.mana
                 manaBar.setLength(player.mana["amt"], player.mana["cap"])
                 del mana_items[i]
                 continue
-
-            mana_items[i].draw(screen)
+            if boxCollision(mana_items[i].hitbox, screenBox) or fuckIt:
+                mana_items[i].draw(screen)
         
         #Chest item movement o(n)
         for i,chest in enumerate(chests):
@@ -165,15 +170,15 @@ while running:
             if mouseMove: chests[i].mouseMove(mouseDir, playerSpeed)
 
             #Chest despawns if out of range
-            if boxCollision(player, chests[i]):
+            if boxCollision(player.hitbox, chests[i].hitbox):
                 player.artifacts += 1
                 del chests[i]
                 continue
             elif not inBox(chests[i].center, [[fs_xmin, fs_ymin],[fs_xmax, fs_ymax]]):
                 del chests[i]
                 continue
-
-            chests[i].draw(screen)
+            if boxCollision(chests[i].hitbox, screenBox):
+                chests[i].draw(screen)
         
         #Enemy movement o(n)
         for i, obj in enumerate(enemies):
@@ -233,7 +238,7 @@ while running:
                         if not interval or (interval and int_over):
                             if not pen or (pen and not id(enemy) in attacks[mag][i].hits):
                                 if "box_col" in det:
-                                    if boxCollision(attacks[mag][i], enemy):
+                                    if boxCollision(attacks[mag][i].hitbox, enemy.hitbox):
                                         enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
                                         hit = True
                                         if pen: attacks[mag][i].hits.append(id(enemy))
@@ -243,7 +248,7 @@ while running:
                                         hit = True
                                         if pen: attacks[mag][i].hits.append(id(enemy))
                             if "line_col" in det:
-                                if (not id(enemy) in attacks[mag][i].hits) and boxCollision(enemy, attacks[mag][i]):
+                                if (not id(enemy) in attacks[mag][i].hits) and boxCollision(enemy.hitbox, attacks[mag][i].hitbox):
                                     if lineCollision(enemy, attacks[mag][i]):
                                         enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
                                         attacks[mag][i].hits.append(id(enemy))
@@ -296,13 +301,15 @@ while running:
                     factor = (enemy.rad+other.rad)/res             
                     move = dist*(factor-1)/2 #10
                     enemies[i].pos += move
-            enemies[i].draw(screen)
+            if boxCollision(enemies[i].hitbox, screenBox) or fuckIt:
+                enemies[i].draw(screen)
 
         #Draw attacks
         for mag in attacks.keys():
             if magic[mag]["level"]>0:
                 for att in attacks[mag]:
-                    att.draw(screen)
+                    if boxCollision(att.hitbox, screenBox) or fuckIt:
+                        att.draw(screen)
 
 
         #Event ticks
@@ -317,11 +324,11 @@ while running:
                 fps[1].append(trueSpeed/gameSpeed)
 
             #Enemy spawn
-            if ticks%4 == 0:
-                n = 2
+            if ticks%1 == 0:
+                n = 1
                 for _ in range(n):
                     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
-                enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
+                # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
 
             #Mana spawn
             mana_spawn = rd.randint(1, 5)
@@ -337,7 +344,7 @@ while running:
             #Player damage (takes damage only every 5 ticks)
             if plyrDmgCd<ticks:
                 for enemy in enemies:
-                    if ballCollision(player, enemy):
+                    if ballCollision(player, enemy) and not immortal:
                         player.hp -= enemy.dmg
                         healthBar.setLength(player.hp, 100)
                         plyrDmgCd = ticks + 5
@@ -480,7 +487,7 @@ while running:
         if player.mana["amt"] >= player.mana["cap"]:
             player.mana["amt"] -= player.mana["cap"]
             player.mana["lvl"] += 1
-            player.mana["cap"] += 50 #Mana upgrade rate
+            player.mana["cap"] += 20 #Mana upgrade rate
 
             avail = False
             for n in range(3):
@@ -587,6 +594,7 @@ while running:
             while None in availableMagic:
                 availableMagic.remove(None)
 
+
 print("Mana level :", player.mana["lvl"])
 print("Total mana collected:", total_mana)
 print("Artifacts collected :", player.artifacts)
@@ -595,5 +603,6 @@ print("Player health :", player.hp)
 print("Time :", ticks/10, "secs")
 
 if graph:
+    print("Average fps: ", np.array(fps[1]).mean())
     plt.plot(fps[0], fps[1])
     plt.show()
