@@ -21,7 +21,7 @@ ticks = 0 #1/10th of a second
 #Testing variables
 graph = False #Enable to record fps
 fuckIt = False
-immortal = False
+immortal = True
 
 pg.init()
 
@@ -31,7 +31,7 @@ running = True
 # mixer.music.load("Blizzard.mp3")
 # mixer.music.play(-1)
 
-keyMove = True
+keyMove = False
 pause = False
 lvlUp = False
 mouseMove = not keyMove
@@ -72,6 +72,7 @@ for x in range(n):
 manaBar = Bar([0,0], "mana_bar.png", xmax, 10)
 healthBar = Bar((player.pos+np.array([-3, 50])), "health_bar.png", 30, 4)
 healthBar.setLength(player.hp, 100)
+playerAngle = 0
 
 #Attacks
 attacks = {x : [] for x in magic.keys()} #All attacks integrated into one dictionary
@@ -117,12 +118,38 @@ while running:
         direct = []
 
     if not (pause or lvlUp):
-        if not keyMove:
+        if keyMove:
+            if direct != []:
+                mDic = {
+                    "left" : [0, 90],
+                    "right" : [0, -90],
+                    "up" : [1, 1],
+                    "down" : [1, -1],
+                }
+                a = [0,0]
+                for mv in direct:
+                    mv = mDic[mv]
+                    a[mv[0]] -= mv[1]
+                if a[0]!=0 and a[1]!=0:
+                    v = a[0]*a[1]/2
+                else:
+                    v = a[0]+a[1]
+                playerAngle = v if abs(v)>1 else 0
+                if a[1]>=0:
+                    playerAngle += 180
+                elif a[0]>0:
+                    playerAngle += 360
+        else:
             mousePos = np.array(pg.mouse.get_pos(), dtype="float64")
             mouseVec = mousePos - player.center
             magn = magnitude(mouseVec)
             magn = magn if magn != 0 else 1
             mouseDir = mouseVec/magn
+            playerAngle = getAngle(mouseDir)
+            if mouseDir[1]>0:
+                playerAngle += 180
+            elif mouseDir[0]>0:
+                playerAngle += 360
 
         #Object movements
         #Background movement o(n)
@@ -203,6 +230,8 @@ while running:
             if magic[mag]["level"]>0:
                 for i,att in enumerate(attacks[mag]):
                     det = magic[mag]["deets"]
+                    dead = False
+
                     #Movement and despawn
                     if not "static" in det:
                         if keyMove: attacks[mag][i].move(direct, playerSpeed)
@@ -211,12 +240,9 @@ while running:
                         attacks[mag][i].mainMove()
                     if "despawn" in det:
                         if not inBox(attacks[mag][i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
-                            del attacks[mag][i]
-                            continue
+                            dead = True
                     if "expand" in det:
                         attacks[mag][i].grow(gameSpeed/trueSpeed)
-                    
-                    dead = False
 
                     #Timers
                     interval = "int" in magic[mag].keys()
@@ -318,6 +344,10 @@ while running:
         tmp = tmp if tmp>0 else 1
         if timer % tmp == 0 and timer != 0:
             ticks += 1
+            if ticks%10 == 0:
+                print(playerAngle)
+                print("horizontal collision: ", getCollPoint(playerAngle, 90, player.center, [xmin,ymin]))
+                print("vertical collision: ", getCollPoint(playerAngle, 0, player.center, [xmin,ymin]))
 
             if graph:
                 fps[0].append(ticks/10)
@@ -325,7 +355,7 @@ while running:
 
             #Enemy spawn
             if ticks%1 == 0:
-                n = 1
+                n = 2
                 for _ in range(n):
                     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
                 # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))

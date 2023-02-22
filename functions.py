@@ -75,6 +75,15 @@ def spawnObj(objType, props=[]):
         return PiercingProjectile(props[0], props[1], target, props[2], gameSpeed)
     if objType=="fireball":
         return Projectile(props[0], props[1], props[2], props[3], gameSpeed)
+    if objType=="flash_shock":
+        pos, target = np.array([0,0]), np.array([0,0])
+        angle = props[0]
+        shock = PiercingProjectile(pos, props[1], target, props[2], gameSpeed)
+        shock.thickness = props[3]
+        return shock
+
+def getAngle(vec):
+    return np.arctan(vec[0]/vec[1]) * 180/np.pi
 
 def magnitude(vec):
     return m.sqrt((vec[0]**2)+(vec[1]**2))
@@ -102,6 +111,15 @@ def ballCollision(obj1, obj2):
 def inRange(rad, cen1, cen2):
     distance = magnitude([cen1[0]-cen2[0], cen1[1]-cen2[1]])
     return distance < rad
+
+def getCollPoint(angle1, angle2, line1, line2):
+    angle1 = ((360-angle1))
+    angle2 = ((360-angle2))
+    angle1 = np.tan(angle1*np.pi/180)
+    angle2 = np.tan(angle2*np.pi/180)
+    x = ((line2[1]-line1[1])-((angle1*line1[0])-(angle2*line2[0])))/(angle1-angle2)
+    y = line1[1]+angle1*(x-line1[0])
+    return magnitude(np.array([x-580,y-305]))
 
 def distToLine(objPoint, point, angle): #angle represents pygame rotation angle
     angle = ((360-angle)+90)/(180/np.pi) #converted to numpy angle

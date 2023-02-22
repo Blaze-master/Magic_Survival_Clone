@@ -235,7 +235,7 @@ magic = {
 }
 
 
-testMagic = None
+testMagic = "electric_shock"
 if testMagic:
     for x in magic.keys():
         if x != testMagic:

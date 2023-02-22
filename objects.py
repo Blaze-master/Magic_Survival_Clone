@@ -195,8 +195,8 @@ class Projectile(NonPlayerObject):
         x,y = self.target[0],self.target[1]
         if y>0:
             self.angle += 180
-        # if x>0 and y>0:
-        #     self.angle -= 180
+        elif x>0:
+            self.angle += 360
         self.image = pg.transform.rotate(self.image, self.angle)
         self.moveSpeed = speed
         self.hits = []
