@@ -198,6 +198,7 @@ class Projectile(NonPlayerObject):
         elif x>0:
             self.angle += 360
         self.image = pg.transform.rotate(self.image, self.angle)
+        self.moveHitbox()
         self.moveSpeed = speed
         self.hits = []
     

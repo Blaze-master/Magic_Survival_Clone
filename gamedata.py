@@ -1,7 +1,12 @@
 #Constants
+#trueSpeed represents pixels per second (p/s)
+#fps represents iterations per second (i/s)
+#gameSpeed represents pixels per iteration (p/i)
 fpsLimit = 60 #60
 trueSpeed = 200 #300
 gameSpeed = trueSpeed/fpsLimit
+
+#Coefficients
 playerSpeed = 1.0
 attractSpeed = 1.6
 score = 0
@@ -16,11 +21,13 @@ screenBox = [[xmin,ymin], [xmax,ymax]]
 ex, ey = 800, 500
 e_xmin, e_ymin = -ex, -ey
 e_xmax, e_ymax = ex+xmax, ey+ymax
+enemyBox = [[e_xmin,e_ymin], [e_xmax,e_ymax]]
 
 #Background render box
 bx, by = 500, 300
 bg_xmin, bg_ymin = -bx, -by
 bg_xmax, bg_ymax = bx+xmax, by+ymax
+bgBox = [[bg_xmin,bg_ymin], [bg_xmax,bg_ymax]]
 
 #Field item spawn and render box
 max_mana = 30 #To increase spawn rate, just increase max mana
@@ -43,5 +50,7 @@ textX = (xmax-textWidth)/2
 textY = (ymax-((textHeight*3) + (textMargin*2)))/2
 
 blizRad = 300
+blizNum = 0
+min_shocks = 1
 
 if __name__ == "__main__": pass

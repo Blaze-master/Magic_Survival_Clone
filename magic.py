@@ -232,15 +232,37 @@ magic = {
         "description" : "Fires an explosive projectile",
         "deets" : ["main_move", "despawn", "pen", "box_col", "explode"]
     },
+
+    "flash_shock": {
+        "dmg" : 75,
+        "spd" : 20,
+        "cd" : [0, 0.5], #[time since last attack, cooldown]
+        "width" : 150,
+        "mul" : {
+            "dmg" : 1,
+            "spd" : 1,
+            "cd" : 1,
+            "width" : 1
+        },
+        "level" : 0,
+        "max" : 1, #9
+        "upgrades" : [
+            ("", )
+            #Traits
+        ],
+        "description" : "Flash shock",
+        "deets" : ["main_move", "despawn", "line_col"]
+    },
 }
 
 
-testMagic = "electric_shock"
+testMagic = "flash_shock"
 if testMagic:
     for x in magic.keys():
         if x != testMagic:
             magic[x]["max"] = 0
     magic["magic_bullet"]["cd"][1] = np.inf
+    magic[testMagic]["level"] = 1
     # magic["electric_zone"]["max"] = 1
 
 availableMagic = [x if magic[x]["level"] < magic[x]["max"] else None for x in magic.keys()]

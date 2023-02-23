@@ -25,6 +25,71 @@ def checkMovement(direct, event):
         pass
     return direct
 
+def getAngle(vec):
+    return np.arctan(vec[0]/vec[1]) * 180/np.pi
+
+def magnitude(vec):
+    return m.sqrt((vec[0]**2)+(vec[1]**2))
+
+def getClosest(array, target):
+    closest = map(lambda x : magnitude(x.center-target), array)
+    closest = np.array(list(closest)).argmin()
+    return closest
+
+def boxCollision(box1, box2):
+    X1 = box1[1][0] < box2[0][0]
+    X2 = box1[0][0] > box2[1][0]
+    Y1 = box1[1][1] < box2[0][1]
+    Y2 = box1[0][1] > box2[1][1]
+    col = not(X1 or X2) and not(Y1 or Y2)
+    return col
+
+def inBox(point, box):
+    return (point[0]>box[0][0] and point[0]<box[1][0]) and (point[1]>box[0][1] and point[1]<box[1][1])
+
+def ballCollision(obj1, obj2):
+    distance = magnitude([obj1.center[0]-obj2.center[0], obj1.center[1]-obj2.center[1]])
+    return distance < (obj1.rad+obj2.rad)
+
+def inRange(rad, cen1, cen2):
+    distance = magnitude([cen1[0]-cen2[0], cen1[1]-cen2[1]])
+    return distance < rad
+
+def getCollPoint(angle1, angle2, line1, line2):
+    angle1 = ((360-angle1)+90)
+    angle2 = ((360-angle2)+90)
+    angle1 -= 360 if angle1 >= 360 else 0
+    angle2 -= 360 if angle2 >= 360 else 0
+    angle1 = np.tan(angle1*np.pi/180)
+    angle2 = np.tan(angle2*np.pi/180)
+    x = ((line2[1]-line1[1])-((angle2*line2[0])-(angle1*line1[0])))/(angle1-angle2)
+    y = line1[1]+angle1*(x-line1[0])
+    return np.array([x,y])
+
+def distToLine(objPoint, point, angle): #angle represents pygame rotation angle
+    angle = ((360-angle)+90)/(180/np.pi) #converted to numpy angle
+    m = np.tan(angle)
+    x = ((objPoint[1]-point[1])+((objPoint[0]+point[0]*m**2)/m))/((1+m**2)/m)
+    y = point[1]+m*(x-point[0])
+    return np.array([x,y])
+
+def lineCollision(obj, line):
+    vec = distToLine(obj.center, line.center, line.angle)
+    d = magnitude([vec[0]-obj.center[0],vec[1]-obj.center[1]])
+    return d < line.thickness+obj.rad # and (inBox(vec, line.hitbox) or boxCollision(line, obj))
+
+def lineBoxCollision(obj, line):
+    d1 = distToLine(obj.hitbox[0], line.center, line.angle)
+    d2 = distToLine(obj.hitbox[1], line.center, line.angle)
+    d3 = distToLine([obj.hitbox[0][0], obj.hitbox[1][1]], line.center, line.angle)
+    d4 = distToLine([obj.hitbox[1][0], obj.hitbox[0][1]], line.center, line.angle)
+    d1 /= np.abs(d1)
+    d2 /= np.abs(d2)
+    d3 /= np.abs(d3)
+    d4 /= np.abs(d4)
+    con = d1==d2 and d2==d3 and d3==d4
+    return (not con) and (boxCollision(line, obj))
+
 def spawnObj(objType, props=[]):
     if objType=="enemy":
         xl0, yl0, xh0, yh0 = e_xmin, e_ymin, e_xmax, e_ymax
@@ -76,74 +141,9 @@ def spawnObj(objType, props=[]):
     if objType=="fireball":
         return Projectile(props[0], props[1], props[2], props[3], gameSpeed)
     if objType=="flash_shock":
-        pos, target = np.array([0,0]), np.array([0,0])
-        angle = props[0]
-        shock = PiercingProjectile(pos, props[1], target, props[2], gameSpeed)
-        shock.thickness = props[3]
+        shock = PiercingProjectile(props[0], props[1], props[2], props[3], gameSpeed)
+        shock.thickness = props[4]
         return shock
-
-def getAngle(vec):
-    return np.arctan(vec[0]/vec[1]) * 180/np.pi
-
-def magnitude(vec):
-    return m.sqrt((vec[0]**2)+(vec[1]**2))
-
-def getClosest(array, target):
-    closest = map(lambda x : magnitude(x.center-target), array)
-    closest = np.array(list(closest)).argmin()
-    return closest
-
-def boxCollision(box1, box2):
-    X1 = box1[1][0] < box2[0][0]
-    X2 = box1[0][0] > box2[1][0]
-    Y1 = box1[1][1] < box2[0][1]
-    Y2 = box1[0][1] > box2[1][1]
-    col = not(X1 or X2) and not(Y1 or Y2)
-    return col
-
-def inBox(point, box):
-    return (point[0]>box[0][0] and point[0]<box[1][0]) and (point[1]>box[0][1] and point[1]<box[1][1])
-
-def ballCollision(obj1, obj2):
-    distance = magnitude([obj1.center[0]-obj2.center[0], obj1.center[1]-obj2.center[1]])
-    return distance < (obj1.rad+obj2.rad)
-
-def inRange(rad, cen1, cen2):
-    distance = magnitude([cen1[0]-cen2[0], cen1[1]-cen2[1]])
-    return distance < rad
-
-def getCollPoint(angle1, angle2, line1, line2):
-    angle1 = ((360-angle1))
-    angle2 = ((360-angle2))
-    angle1 = np.tan(angle1*np.pi/180)
-    angle2 = np.tan(angle2*np.pi/180)
-    x = ((line2[1]-line1[1])-((angle1*line1[0])-(angle2*line2[0])))/(angle1-angle2)
-    y = line1[1]+angle1*(x-line1[0])
-    return magnitude(np.array([x-580,y-305]))
-
-def distToLine(objPoint, point, angle): #angle represents pygame rotation angle
-    angle = ((360-angle)+90)/(180/np.pi) #converted to numpy angle
-    m = np.tan(angle)
-    x = ((objPoint[1]-point[1])+((objPoint[0]+point[0]*m**2)/m))/((1+m**2)/m)
-    y = point[1]+m*(x-point[0])
-    return np.array([x,y])
-
-def lineCollision(obj, line):
-    vec = distToLine(obj.center, line.center, line.angle)
-    d = magnitude([vec[0]-obj.center[0],vec[1]-obj.center[1]])
-    return d < line.thickness+obj.rad # and (inBox(vec, line.hitbox) or boxCollision(line, obj))
-
-def lineBoxCollision(obj, line):
-    d1 = distToLine(obj.hitbox[0], line.center, line.angle)
-    d2 = distToLine(obj.hitbox[1], line.center, line.angle)
-    d3 = distToLine([obj.hitbox[0][0], obj.hitbox[1][1]], line.center, line.angle)
-    d4 = distToLine([obj.hitbox[1][0], obj.hitbox[0][1]], line.center, line.angle)
-    d1 /= np.abs(d1)
-    d2 /= np.abs(d2)
-    d3 /= np.abs(d3)
-    d4 /= np.abs(d4)
-    con = d1==d2 and d2==d3 and d3==d4
-    return (not con) and (boxCollision(line, obj))
 
 def decipherUpgrade(magic):
     lvl = magic["level"]

@@ -31,7 +31,7 @@ running = True
 # mixer.music.load("Blizzard.mp3")
 # mixer.music.play(-1)
 
-keyMove = False
+keyMove = True
 pause = False
 lvlUp = False
 mouseMove = not keyMove
@@ -48,7 +48,7 @@ plyrDmgCd = 0
 
 #Spawn backgrounds
 background = []
-n = 50
+n = 50 #50
 for x in range(n):
     bg = Background([rd.randint(bg_xmin, bg_xmax), rd.randint(bg_ymin, bg_ymax)], "grass.png", gameSpeed)
     background.append(bg)
@@ -72,7 +72,7 @@ for x in range(n):
 manaBar = Bar([0,0], "mana_bar.png", xmax, 10)
 healthBar = Bar((player.pos+np.array([-3, 50])), "health_bar.png", 30, 4)
 healthBar.setLength(player.hp, 100)
-playerAngle = 0
+playerAngle = 0.01
 
 #Attacks
 attacks = {x : [] for x in magic.keys()} #All attacks integrated into one dictionary
@@ -84,8 +84,6 @@ attacks["electric_zone"].append(Zone(
     np.inf,
     gameSpeed
     ))
-blizNum = 0
-min_shocks = 1
 
 direct = []
 if graph: fps = [[],[]]
@@ -130,11 +128,11 @@ while running:
                 for mv in direct:
                     mv = mDic[mv]
                     a[mv[0]] -= mv[1]
-                if a[0]!=0 and a[1]!=0:
+                if a[0]!=0 and a[1]!=0: #if all values are non zero
                     v = a[0]*a[1]/2
                 else:
                     v = a[0]+a[1]
-                playerAngle = v if abs(v)>1 else 0
+                playerAngle = v if abs(v)>0 else 0.01
                 if a[1]>=0:
                     playerAngle += 180
                 elif a[0]>0:
@@ -274,7 +272,7 @@ while running:
                                         hit = True
                                         if pen: attacks[mag][i].hits.append(id(enemy))
                             if "line_col" in det:
-                                if (not id(enemy) in attacks[mag][i].hits) and boxCollision(enemy.hitbox, attacks[mag][i].hitbox):
+                                if (not id(enemy) in attacks[mag][i].hits) and (boxCollision(enemy.hitbox, attacks[mag][i].hitbox) or inBox(distToLine(enemies[j].center, attacks[mag][i].center, att.angle), attacks[mag][i].hitbox)):
                                     if lineCollision(enemy, attacks[mag][i]):
                                         enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
                                         attacks[mag][i].hits.append(id(enemy))
@@ -344,10 +342,6 @@ while running:
         tmp = tmp if tmp>0 else 1
         if timer % tmp == 0 and timer != 0:
             ticks += 1
-            if ticks%10 == 0:
-                print(playerAngle)
-                print("horizontal collision: ", getCollPoint(playerAngle, 90, player.center, [xmin,ymin]))
-                print("vertical collision: ", getCollPoint(playerAngle, 0, player.center, [xmin,ymin]))
 
             if graph:
                 fps[0].append(ticks/10)
@@ -355,7 +349,7 @@ while running:
 
             #Enemy spawn
             if ticks%1 == 0:
-                n = 2
+                n = 5
                 for _ in range(n):
                     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
                 # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
@@ -511,6 +505,30 @@ while running:
                         ])
                     )
                 magic["fireball"]["cd"][0] = 0
+        
+        #Flash shock spawn
+        if magic["flash_shock"]["level"] > 0:
+            magic["flash_shock"]["cd"][0] += gameSpeed*magic["flash_shock"]["mul"]["cd"]/trueSpeed
+            if magic["flash_shock"]["cd"][0] >= magic["flash_shock"]["cd"][1]:
+                box = screenBox
+                hor = getCollPoint(playerAngle, 90, player.center, box[0])
+                vert = getCollPoint(playerAngle, 0, player.center, box[0])
+                diag = np.arctan((box[1][1])/(box[1][0]))*180/np.pi
+                p = vert if inBox(vert, box) else hor
+                target = box[1] - p if playerAngle>=diag+90 and playerAngle<=diag+270 else p
+                pos = box[1] - target
+                shock = spawnObj("flash_shock", [
+                    pos,
+                    ["flash_shock.png"],
+                    target,
+                    magic["flash_shock"]["spd"]*magic["flash_shock"]["mul"]["spd"],
+                    magic["flash_shock"]["width"]*magic["flash_shock"]["mul"]["width"]
+                ])
+                shock.pos -= shock.target*500 if playerAngle>=diag+90 and playerAngle<=diag+270 else 0
+                if (playerAngle>90 and playerAngle<180) or (playerAngle>270 and playerAngle<360):
+                    shock.pos -= (shock.hitbox[1]-shock.hitbox[0])/2
+                attacks["flash_shock"].append(shock)
+                magic["flash_shock"]["cd"][0] = 0
 
 
         #Mana level up
