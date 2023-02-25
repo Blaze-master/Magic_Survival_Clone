@@ -21,7 +21,8 @@ ticks = 0 #1/10th of a second
 #Testing variables
 graph = False #Enable to record fps
 fuckIt = False
-immortal = True
+immortal = False
+keyMove = True
 
 pg.init()
 
@@ -31,7 +32,6 @@ running = True
 # mixer.music.load("Blizzard.mp3")
 # mixer.music.play(-1)
 
-keyMove = True
 pause = False
 lvlUp = False
 mouseMove = not keyMove
@@ -349,7 +349,7 @@ while running:
 
             #Enemy spawn
             if ticks%1 == 0:
-                n = 5
+                n = 2
                 for _ in range(n):
                     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
                 # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
@@ -522,7 +522,7 @@ while running:
                     ["flash_shock.png"],
                     target,
                     magic["flash_shock"]["spd"]*magic["flash_shock"]["mul"]["spd"],
-                    magic["flash_shock"]["width"]*magic["flash_shock"]["mul"]["width"]
+                    magic["flash_shock"]["size"]*magic["flash_shock"]["mul"]["size"]
                 ])
                 shock.pos -= shock.target*500 if playerAngle>=diag+90 and playerAngle<=diag+270 else 0
                 if (playerAngle>90 and playerAngle<180) or (playerAngle>270 and playerAngle<360):

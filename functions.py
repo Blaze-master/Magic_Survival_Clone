@@ -25,10 +25,10 @@ def checkMovement(direct, event):
         pass
     return direct
 
-def getAngle(vec):
+def getAngle(vec): #Key func
     return np.arctan(vec[0]/vec[1]) * 180/np.pi
 
-def magnitude(vec):
+def magnitude(vec): #Key func
     return m.sqrt((vec[0]**2)+(vec[1]**2))
 
 def getClosest(array, target):
@@ -36,7 +36,7 @@ def getClosest(array, target):
     closest = np.array(list(closest)).argmin()
     return closest
 
-def boxCollision(box1, box2):
+def boxCollision(box1, box2): #Key func
     X1 = box1[1][0] < box2[0][0]
     X2 = box1[0][0] > box2[1][0]
     Y1 = box1[1][1] < box2[0][1]
@@ -44,18 +44,18 @@ def boxCollision(box1, box2):
     col = not(X1 or X2) and not(Y1 or Y2)
     return col
 
-def inBox(point, box):
+def inBox(point, box): #Key func
     return (point[0]>box[0][0] and point[0]<box[1][0]) and (point[1]>box[0][1] and point[1]<box[1][1])
 
-def ballCollision(obj1, obj2):
+def ballCollision(obj1, obj2): #Key func
     distance = magnitude([obj1.center[0]-obj2.center[0], obj1.center[1]-obj2.center[1]])
     return distance < (obj1.rad+obj2.rad)
 
-def inRange(rad, cen1, cen2):
+def inRange(rad, cen1, cen2): #Key func
     distance = magnitude([cen1[0]-cen2[0], cen1[1]-cen2[1]])
     return distance < rad
 
-def getCollPoint(angle1, angle2, line1, line2):
+def getCollPoint(angle1, angle2, line1, line2): #Key func
     angle1 = ((360-angle1)+90)
     angle2 = ((360-angle2)+90)
     angle1 -= 360 if angle1 >= 360 else 0
@@ -66,14 +66,14 @@ def getCollPoint(angle1, angle2, line1, line2):
     y = line1[1]+angle1*(x-line1[0])
     return np.array([x,y])
 
-def distToLine(objPoint, point, angle): #angle represents pygame rotation angle
+def distToLine(objPoint, point, angle): #angle represents pygame rotation angle #Key func
     angle = ((360-angle)+90)/(180/np.pi) #converted to numpy angle
     m = np.tan(angle)
     x = ((objPoint[1]-point[1])+((objPoint[0]+point[0]*m**2)/m))/((1+m**2)/m)
     y = point[1]+m*(x-point[0])
     return np.array([x,y])
 
-def lineCollision(obj, line):
+def lineCollision(obj, line): #Key func
     vec = distToLine(obj.center, line.center, line.angle)
     d = magnitude([vec[0]-obj.center[0],vec[1]-obj.center[1]])
     return d < line.thickness+obj.rad # and (inBox(vec, line.hitbox) or boxCollision(line, obj))

@@ -234,29 +234,38 @@ magic = {
     },
 
     "flash_shock": {
-        "dmg" : 75,
+        "dmg" : 500,
         "spd" : 20,
-        "cd" : [0, 0.5], #[time since last attack, cooldown]
-        "width" : 150,
+        "cd" : [0, 12], #[time since last attack, cooldown]
+        "size" : 150,
+        "num" : 1,
         "mul" : {
             "dmg" : 1,
             "spd" : 1,
             "cd" : 1,
-            "width" : 1
+            "size" : 1,
+            "num" : 0
         },
         "level" : 0,
-        "max" : 1, #9
+        "max" : 9, #9
         "upgrades" : [
-            ("", )
+            ("cd", .1),
+            ("dmg", .3),
+            ("size", .1),
+            ("cd", .1),
+            ("dmg", .3),
+            ("cd", .2),
+            ("size", .2),
+            ("dmg", .5),
             #Traits
         ],
-        "description" : "Flash shock",
+        "description" : "Creates a flash that crosses the field in the direction of character's movement",
         "deets" : ["main_move", "despawn", "line_col"]
     },
 }
 
 
-testMagic = "flash_shock"
+testMagic = None
 if testMagic:
     for x in magic.keys():
         if x != testMagic:
