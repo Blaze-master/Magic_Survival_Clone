@@ -123,7 +123,7 @@ def spawnObj(objType, props=[]):
     if objType=="explosion":
         return Explosion(props[0], props[1], props[2], props[3], gameSpeed)
     if objType=="magic_bullet":
-        return Projectile(props[0], props[1], props[2], props[3], gameSpeed)
+        return Projectile(props[0], props[1], props[2], props[3], gSpeed=gameSpeed)
     if objType=="lavazone":
         return Zone(props[0], props[1], props[2], props[3], gameSpeed)
     if objType=="arcane_ray":
@@ -134,16 +134,18 @@ def spawnObj(objType, props=[]):
         pos = np.array([np.cos(a)*d, np.sin(a)*d]) + props[2]
         return Bombard(pos-[150,500], props[0], pos, props[1], gameSpeed)
     if objType=="cyclone":
-        return MovingZone(props[0], props[1], props[2], props[3], props[4], props[5], props[6], gameSpeed)
+        return MovingZone(props[0], props[1], props[2], props[3], props[4], props[5], props[6], gSpeed=gameSpeed)
     if objType=="electric_shock":
         target = np.random.rand(2) * [xmax, ymax]
-        return PiercingProjectile(props[0], props[1], target, props[2], gameSpeed)
+        return PiercingProjectile(props[0], props[1], target, props[2], gSpeed=gameSpeed)
     if objType=="fireball":
-        return Projectile(props[0], props[1], props[2], props[3], gameSpeed)
+        return Projectile(props[0], props[1], props[2], props[3], gSpeed=gameSpeed)
     if objType=="flash_shock":
-        shock = PiercingProjectile(props[0], props[1], props[2], props[3], gameSpeed)
+        shock = PiercingProjectile(props[0], props[1], props[2], props[3], gSpeed=gameSpeed)
         shock.thickness = props[4]
         return shock
+    if objType=="energy_bullet":
+        return MovingZone(props[0], props[1], props[2], props[3], props[4], props[5], gSpeed=gameSpeed)
 
 def decipherUpgrade(magic):
     lvl = magic["level"]

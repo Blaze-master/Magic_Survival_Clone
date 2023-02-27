@@ -203,6 +203,37 @@ magic = {
         "deets" : ["main_move", "despawn", "line_col"]
     },
 
+    "energy_bullet": {
+        "dmg" : 75,
+        "spd" : 2,
+        "cd" : [0, 3.3],
+        "size" : 30,
+        "dur" : 0.75,
+        "num" : 6,
+        "mul" : {
+            "dmg" : 1,
+            "size" : 1,
+            "spd" : 1,
+            "cd" : 1,
+            "dur" : 1,
+            "num" : 0,
+        },
+        "level" : 0,
+        "max" : 1, #9
+        "upgrades" : [
+            ("num", 1),
+            ("dmg", .3),
+            ("size", .3),
+            ("num", 2),
+            ("dmg", .3),
+            ("cd", .2),
+            ("num", 3),
+            ("dmg", .5),
+        ],
+        "description" : "Fires a circle of energy that burns through enemies",
+        "deets" : ["main_move", "ball_col"]
+    },
+
     "fireball": {
         "dmg" : 80,
         "spd" : 2.0,
@@ -262,6 +293,7 @@ magic = {
         "description" : "Creates a flash that crosses the field in the direction of character's movement",
         "deets" : ["main_move", "despawn", "line_col"]
     },
+    
 }
 
 

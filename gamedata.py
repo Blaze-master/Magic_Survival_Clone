@@ -6,6 +6,10 @@ fpsLimit = 60 #60
 trueSpeed = 200 #300
 gameSpeed = trueSpeed/fpsLimit
 
+#Metrics for recording passage of time
+timer = 0 #Frame counter
+ticks = 0 #1/10th of a second
+
 #Coefficients
 playerSpeed = 1.0
 attractSpeed = 1.6

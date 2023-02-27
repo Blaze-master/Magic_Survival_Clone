@@ -14,15 +14,11 @@ from functions import *
 from artifacts import *
 from enemies import *
 
-#Metrics for recording passage of time
-timer = 0 #Frame counter
-ticks = 0 #1/10th of a second
-
 #Testing variables
 graph = False #Enable to record fps
-fuckIt = False
-immortal = False
-keyMove = True
+fuckIt = False #Ignore this
+immortal = False #Infinite health
+keyMove = True #Keyboard movement
 
 pg.init()
 
@@ -241,6 +237,9 @@ while running:
                             dead = True
                     if "expand" in det:
                         attacks[mag][i].grow(gameSpeed/trueSpeed)
+                    if mag == "energy_bullet":
+                        attacks[mag][i].moveSpeed -= 0.05
+                        attacks[mag][i].moveSpeed = 0 if att.moveSpeed<=0 else att.moveSpeed
 
                     #Timers
                     interval = "int" in magic[mag].keys()
@@ -251,6 +250,7 @@ while running:
                         if magic[mag]["int"][0]>=magic[mag]["int"][1]:
                             int_over = True
                             magic[mag]["int"][0] = 0
+                            attacks[mag][i].hits = []
                     if duration:
                         attacks[mag][i].duration -= gameSpeed/trueSpeed
                         dead = attacks[mag][i].duration<=0
@@ -259,20 +259,19 @@ while running:
                     pen = "pen" in magic[mag].keys()
                     hit = False
                     for j,enemy in enumerate(enemies):
-                        if not interval or (interval and int_over):
-                            if not pen or (pen and not id(enemy) in attacks[mag][i].hits):
-                                if "box_col" in det:
-                                    if boxCollision(attacks[mag][i].hitbox, enemy.hitbox):
-                                        enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
-                                        hit = True
-                                        if pen: attacks[mag][i].hits.append(id(enemy))
-                                if "ball_col" in det:
-                                    if ballCollision(attacks[mag][i], enemy):
-                                        enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
-                                        hit = True
-                                        if pen: attacks[mag][i].hits.append(id(enemy))
+                        if (not id(enemy) in attacks[mag][i].hits) and (not interval or (interval and int_over)):
+                            if "box_col" in det:
+                                if boxCollision(attacks[mag][i].hitbox, enemy.hitbox):
+                                    enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                    hit = True
+                                    attacks[mag][i].hits.append(id(enemy))
+                            if "ball_col" in det:
+                                if ballCollision(attacks[mag][i], enemy):
+                                    enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                    hit = True
+                                    attacks[mag][i].hits.append(id(enemy))
                             if "line_col" in det:
-                                if (not id(enemy) in attacks[mag][i].hits) and (boxCollision(enemy.hitbox, attacks[mag][i].hitbox) or inBox(distToLine(enemies[j].center, attacks[mag][i].center, att.angle), attacks[mag][i].hitbox)):
+                                if (boxCollision(enemy.hitbox, attacks[mag][i].hitbox) or inBox(distToLine(enemies[j].center, attacks[mag][i].center, att.angle), attacks[mag][i].hitbox)):
                                     if lineCollision(enemy, attacks[mag][i]):
                                         enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
                                         attacks[mag][i].hits.append(id(enemy))
@@ -348,8 +347,8 @@ while running:
                 fps[1].append(trueSpeed/gameSpeed)
 
             #Enemy spawn
-            if ticks%1 == 0:
-                n = 2
+            if ticks%2 == 0:
+                n = 1
                 for _ in range(n):
                     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
                 # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
@@ -529,6 +528,25 @@ while running:
                     shock.pos -= (shock.hitbox[1]-shock.hitbox[0])/2
                 attacks["flash_shock"].append(shock)
                 magic["flash_shock"]["cd"][0] = 0
+
+        #Energy bullet spawn
+        if magic["energy_bullet"]["level"] > 0:
+            magic["energy_bullet"]["cd"][0] += gameSpeed*magic["energy_bullet"]["mul"]["cd"]/trueSpeed
+            if magic["energy_bullet"]["cd"][0] >= magic["energy_bullet"]["cd"][1] and len(enemies) > 0:
+                closest = enemies[getClosest(enemies, player.center)]
+                dist = magnitude([closest.center[0]-player.center[0], closest.center[1]-player.center[1]])
+                num = magic["energy_bullet"]["num"]+magic["energy_bullet"]["mul"]["num"]
+                for _ in range(num):
+                    si, sp = rd.randint(80, 120)/100, rd.randint(80, 120)/100
+                    attacks["energy_bullet"].append(spawnObj("energy_bullet", [
+                        player.center,
+                        ["energy_bullet.png"],
+                        closest.center+((np.random.rand(2)-0.5)*dist),
+                        magic["energy_bullet"]["spd"]*magic["energy_bullet"]["mul"]["spd"]*sp,
+                        magic["energy_bullet"]["size"]*magic["energy_bullet"]["mul"]["size"]*si,
+                        magic["energy_bullet"]["dur"]*magic["energy_bullet"]["mul"]["dur"]
+                        ]))
+                magic["energy_bullet"]["cd"][0] = 0
 
 
         #Mana level up
