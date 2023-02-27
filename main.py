@@ -534,10 +534,10 @@ while running:
             magic["energy_bullet"]["cd"][0] += gameSpeed*magic["energy_bullet"]["mul"]["cd"]/trueSpeed
             if magic["energy_bullet"]["cd"][0] >= magic["energy_bullet"]["cd"][1] and len(enemies) > 0:
                 closest = enemies[getClosest(enemies, player.center)]
-                dist = magnitude([closest.center[0]-player.center[0], closest.center[1]-player.center[1]])
+                dist = magnitude([closest.center[0]-player.center[0], closest.center[1]-player.center[1]])*1.5
                 num = magic["energy_bullet"]["num"]+magic["energy_bullet"]["mul"]["num"]
                 for _ in range(num):
-                    si, sp = rd.randint(80, 120)/100, rd.randint(80, 120)/100
+                    si, sp = rd.randint(65, 135)/100, rd.randint(65, 135)/100
                     attacks["energy_bullet"].append(spawnObj("energy_bullet", [
                         player.center,
                         ["energy_bullet.png"],

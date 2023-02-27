@@ -219,7 +219,7 @@ magic = {
             "num" : 0,
         },
         "level" : 0,
-        "max" : 1, #9
+        "max" : 9, #9
         "upgrades" : [
             ("num", 1),
             ("dmg", .3),
@@ -293,7 +293,7 @@ magic = {
         "description" : "Creates a flash that crosses the field in the direction of character's movement",
         "deets" : ["main_move", "despawn", "line_col"]
     },
-    
+
 }
 
 
