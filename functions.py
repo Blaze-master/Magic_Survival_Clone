@@ -146,6 +146,15 @@ def spawnObj(objType, props=[]):
         return shock
     if objType=="energy_bullet":
         return MovingZone(props[0], props[1], props[2], props[3], props[4], props[5], gSpeed=gameSpeed)
+    if objType=="frost_nova":
+        return Zone(props[0], props[1], props[2], props[3], gameSpeed)
+    if objType=="thunderstorm":
+        return Zone(props[0], props[1], None, props[2], gameSpeed)
+    if objType=="meteor":
+        d = rd.randint(0, blizRad)
+        a = rd.randint(0, 360)*np.pi/180
+        pos = np.array([np.cos(a)*d, np.sin(a)*d]) + props[2]
+        return Bombard(pos-[400,600], props[0], pos, props[1], gameSpeed)
 
 def decipherUpgrade(magic):
     lvl = magic["level"]

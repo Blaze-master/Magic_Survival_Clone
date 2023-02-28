@@ -54,7 +54,7 @@ magic = {
             #Traits
         ],
         "description" : "Creates a lava zone that damages enemies for a certain period of time",
-        "deets" : ["ball_col"]
+        "deets" : ["ball_col", "below"]
     },
 
     "electric_zone" : {
@@ -292,6 +292,90 @@ magic = {
         ],
         "description" : "Creates a flash that crosses the field in the direction of character's movement",
         "deets" : ["main_move", "despawn", "line_col"]
+    },
+
+    "frost_nova" : {
+        "dmg" : 100,
+        "cd" : [0, 5.8],
+        "rad" : 75,
+        "dur" : 0.8,
+        "mul" : {
+            "dmg" : 1,
+            "cd" : 1,
+            "rad" : 1,
+            "dur" : 1,
+        },
+        "level" : 0,
+        "max" : 7, #7
+        "upgrades" : [
+            ("rad", .15),
+            ("dmg", .3),
+            ("rad", .15),
+            ("dmg", .3),
+            ("rad", .25),
+            ("dmg", .5),
+            #Traits
+        ],
+        "description" : "Unleash an ice blast that damages enemies", #Freeze nearby enemies briefly
+        "deets" : ["below"]
+    },
+
+    "thunderstorm" : {
+        "dmg" : 125,
+        "cd" : [0, 2.2],
+        "rad" : 50,
+        "dur" : 0.5,
+        "num" : 1,
+        "mul" : {
+            "dmg" : 1,
+            "cd" : 1,
+            "rad" : 1,
+            "dur" : 1,
+            "num" : 0,
+        },
+        "level" : 0,
+        "max" : 9, #9
+        "upgrades" : [
+            ("num", 1),
+            ("dmg", .3),
+            ("cd", .1),
+            ("num", 2),
+            ("dmg", .3),
+            ("cd", .2),
+            ("num", 3),
+            ("dmg", .5),
+            #Traits
+        ],
+        "description" : "Strike the surrounding monsters with thunderbolts",
+        "deets" : []
+    },
+
+    "meteor" : {
+        "dmg" : 250,
+        "rad" : 75,
+        "cd" : [0, 3.6],
+        "spd" : 5,
+        "mul" : {
+            "dmg" : 1,
+            "rad" : 1,
+            "cd" : 1,
+            "spd" : 1,
+        },
+        "level" : 0,
+        "max" : 9, #9
+        "upgrades" : [
+            ("rad", .1),
+            ("dmg", .3),
+            ("cd", .1),
+            ("rad", .1),
+            ("dmg", .3),
+            ("cd", .2),
+            ("rad", .2),
+            ("dmg", .5),
+            #Traits
+        ],
+        "description" : "Drop a meteor on a random area",
+        "deets" : ["main_move", "bombard", "explode"]
     },
 
 }

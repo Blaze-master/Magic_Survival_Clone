@@ -18,7 +18,7 @@ from enemies import *
 graph = False #Enable to record fps
 fuckIt = False #Ignore this
 immortal = False #Infinite health
-keyMove = True #Keyboard movement
+keyMove = True #Keyboard/mouse movement
 
 pg.init()
 
@@ -314,6 +314,13 @@ while running:
                 enemies.remove(enemy)
                 score += 1
         
+        #Draw attacks below enemies
+        for mag in attacks.keys():
+            if magic[mag]["level"]>0 and ("below" in magic[mag]["deets"]):
+                for att in attacks[mag]:
+                    if boxCollision(att.hitbox, screenBox) or fuckIt:
+                        att.draw(screen)
+        
         #Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
             for j,other in enumerate(enemies):
@@ -327,9 +334,9 @@ while running:
             if boxCollision(enemies[i].hitbox, screenBox) or fuckIt:
                 enemies[i].draw(screen)
 
-        #Draw attacks
+        #Draw attacks above enemies
         for mag in attacks.keys():
-            if magic[mag]["level"]>0:
+            if magic[mag]["level"]>0 and not ("below" in magic[mag]["deets"]):
                 for att in attacks[mag]:
                     if boxCollision(att.hitbox, screenBox) or fuckIt:
                         att.draw(screen)
@@ -547,6 +554,65 @@ while running:
                         magic["energy_bullet"]["dur"]*magic["energy_bullet"]["mul"]["dur"]
                         ]))
                 magic["energy_bullet"]["cd"][0] = 0
+
+        #Frost nova spawn
+        if magic["frost_nova"]["level"] > 0:
+            magic["frost_nova"]["cd"][0] += gameSpeed*magic["frost_nova"]["mul"]["cd"]/trueSpeed
+            if magic["frost_nova"]["cd"][0] >= magic["frost_nova"]["cd"][1] and magic["frost_nova"]["level"] > 0:
+                pos = player.center - (magic["frost_nova"]["rad"]*magic["frost_nova"]["mul"]["rad"])
+                attacks["frost_nova"].append(spawnObj("frost_nova", [
+                    pos,
+                    ["frost_nova.png"],
+                    magic["frost_nova"]["rad"]*magic["frost_nova"]["mul"]["rad"]*2,
+                    magic["frost_nova"]["dur"]*magic["frost_nova"]["mul"]["dur"]
+                    ]))
+                explosions.append(spawnObj(
+                    "explosion",
+                    [
+                        player.center,
+                        None,
+                        magic["frost_nova"]["rad"]*magic["frost_nova"]["mul"]["rad"],
+                        magic["frost_nova"]["dmg"]*magic["frost_nova"]["mul"]["dmg"],
+                    ]))
+                magic["frost_nova"]["cd"][0] = 0
+
+        #Thunderstorm spawn
+        if magic["thunderstorm"]["level"] > 0:
+            magic["thunderstorm"]["cd"][0] += gameSpeed*magic["thunderstorm"]["mul"]["cd"]/trueSpeed
+            if magic["thunderstorm"]["cd"][0] >= magic["thunderstorm"]["cd"][1] and len(enemies) > 0:
+                copy = enemies
+                size = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", "lightening.png"))
+                size = [size.get_width(), size.get_height()]
+                for n in range(round(magic["thunderstorm"]["num"]+magic["thunderstorm"]["mul"]["num"])):
+                    if len(copy)<1: break
+                    closest = copy[getClosest(copy, player.center)]
+                    pos = closest.center
+                    attacks["thunderstorm"].append(spawnObj("thunderstorm", [
+                        pos-[size[0]/2,size[1]],
+                        ["lightening.png"],
+                        magic["thunderstorm"]["dur"]*magic["thunderstorm"]["mul"]["dur"]
+                        ]))
+                    explosions.append(spawnObj(
+                        "explosion",
+                        [
+                            pos,
+                            None,
+                            magic["thunderstorm"]["rad"]*magic["thunderstorm"]["mul"]["rad"],
+                            magic["thunderstorm"]["dmg"]*magic["thunderstorm"]["mul"]["dmg"],
+                        ]))
+                    copy.remove(closest)
+                magic["thunderstorm"]["cd"][0] = 0
+
+        #Meteor spawn
+        if magic["meteor"]["level"]>0:
+            magic["meteor"]["cd"][0] += gameSpeed*magic["meteor"]["mul"]["cd"]/trueSpeed
+            if magic["meteor"]["cd"][0] >= magic["meteor"]["cd"][1]:
+                attacks["meteor"].append(spawnObj("meteor", [
+                    ["meteor.png"],
+                    magic["meteor"]["spd"]*magic["meteor"]["mul"]["spd"],
+                    player.center
+                ]))
+                magic["meteor"]["cd"][0] = 0
 
 
         #Mana level up

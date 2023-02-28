@@ -214,8 +214,8 @@ class PiercingProjectile(Projectile):
 class Zone(NonPlayerObject):
     def __init__(self, position, images, diameter, duration, gSpeed):
         super().__init__(position, images[0], gSpeed)
-        self.image = pg.transform.scale(self.image, (diameter, diameter))
-        self.rad = diameter/2
+        self.image = pg.transform.scale(self.image, (diameter, diameter)) if diameter else self.image
+        self.rad = diameter/2 if diameter else self.image.get_width()
         self.duration = duration
         self.hits = []
         self.moveHitbox()
