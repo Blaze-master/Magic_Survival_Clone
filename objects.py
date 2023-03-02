@@ -314,6 +314,27 @@ class Bombard(Projectile):
     def changeSpeed(self, speed):
         super().changeSpeed(speed)
         self.tarPoint.changeSpeed(speed)
+
+class Satellite(Zone):
+    def __init__(self, position, images, diameter, duration, speed, rad, orbitCen, gSpeed):
+        super().__init__(position, images, diameter, duration, gSpeed)
+        self.duration = np.inf
+        self.angularSpeed = speed
+        self.orbitRad = rad
+        self.orbitAngle = 0
+        self.orbitCen = orbitCen
+    
+    def mainMove(self):
+        self.orbitAngle += self.angularSpeed
+        reset = self.orbitAngle >= 360
+        self.orbitAngle -= 360 if reset else 0
+        self.hits = [] if reset else self.hits
+        pos = np.array([0,0], dtype=np.float64) - [np.sin((self.orbitAngle)*m.pi/180), np.cos((self.orbitAngle)*m.pi/180)]
+        pos *= self.orbitRad
+        pos = self.orbitCen + pos
+        self.pos = pos - (self.rad, self.rad)
+        self.moveHitbox()
+
         
 
 if __name__ == "__main__": pass

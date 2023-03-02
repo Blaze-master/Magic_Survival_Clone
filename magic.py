@@ -378,6 +378,33 @@ magic = {
         "deets" : ["main_move", "bombard", "explode"]
     },
 
+    "satellite": {
+        "dmg" : 45,
+        "spd" : 1.5,
+        "size" : 15,
+        "num" : 1,
+        "mul" : {
+            "dmg" : 1,
+            "size" : 1,
+            "spd" : 1,
+            "num" : 0,
+        },
+        "level" : 0,
+        "max" : 9, #9
+        "upgrades" : [
+            ("num", 1),
+            ("dmg", .3),
+            ("size", .3),
+            ("num", 2),
+            ("dmg", .3),
+            ("spd", .5),
+            ("num", 3),
+            ("dmg", .5),
+        ],
+        "description" : "Create a Satellite to circle and protect the character",
+        "deets" : ["main_move", "static", "ball_col"]
+    },
+
 }
 
 
@@ -387,7 +414,7 @@ if testMagic:
         if x != testMagic:
             magic[x]["max"] = 0
     magic["magic_bullet"]["cd"][1] = np.inf
-    magic[testMagic]["level"] = 1
+    # magic[testMagic]["level"] = 1
     # magic["electric_zone"]["max"] = 1
 
 availableMagic = [x if magic[x]["level"] < magic[x]["max"] else None for x in magic.keys()]

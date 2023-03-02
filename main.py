@@ -716,6 +716,22 @@ while running:
                     size = magic["electric_zone"]["size"] * magic["electric_zone"]["mul"]["size"]
                     attacks["electric_zone"][0].rad = size/2
                     attacks["electric_zone"][0].respawn(player.center)
+                
+                #Spawn Satellite
+                if upgrade.magic=="satellite":
+                    attacks["satellite"] = []
+                    num = magic["satellite"]["num"]+magic["satellite"]["mul"]["num"]
+                    for _ in range(num):
+                        attacks["satellite"].append(spawnObj("satellite", [
+                            [0,0],
+                            ["satellite.png"],
+                            magic["satellite"]["size"]*magic["satellite"]["mul"]["size"],
+                            magic["satellite"]["spd"]*magic["satellite"]["mul"]["spd"],
+                            150,
+                            player.center
+                        ]))
+                    for i,sat in enumerate(attacks["satellite"]):
+                        attacks["satellite"][i].orbitAngle = 360*i/len(attacks["satellite"])
 
         pg.display.update()
         #Refresh available magic upgrades
