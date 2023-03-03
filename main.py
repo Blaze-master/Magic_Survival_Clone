@@ -271,7 +271,13 @@ while running:
                                     hit = True
                                     attacks[mag][i].hits.append(id(enemy))
                             if "line_col" in det:
-                                if (boxCollision(enemy.hitbox, attacks[mag][i].hitbox) or inBox(distToLine(enemies[j].center, attacks[mag][i].center, att.angle), attacks[mag][i].hitbox)):
+                                if mag=="flash_shock":
+                                    if inBox(distToLine(enemies[j].center, attacks[mag][i].center, att.angle), attacks[mag][i].hitbox):
+                                        if lineCollision(enemy, attacks[mag][i]):
+                                            enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                            attacks[mag][i].hits.append(id(enemy))
+                                            hit = True
+                                elif boxCollision(enemy.hitbox, attacks[mag][i].hitbox):
                                     if lineCollision(enemy, attacks[mag][i]):
                                         enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
                                         attacks[mag][i].hits.append(id(enemy))
@@ -431,7 +437,7 @@ while running:
         if magic["arcane_ray"]["level"] > 0:
             magic["arcane_ray"]["cd"][0] += gameSpeed*magic["arcane_ray"]["mul"]["cd"]/trueSpeed
             if magic["arcane_ray"]["cd"][0] >= magic["arcane_ray"]["cd"][1] and len(enemies) > 0:
-                copy = enemies
+                copy = enemies[:]
                 for n in range(round(magic["arcane_ray"]["num"]+magic["arcane_ray"]["mul"]["num"])):
                     if len(copy)<1: break
                     closest = getClosest(copy, player.center)
@@ -613,7 +619,47 @@ while running:
                     player.center
                 ]))
                 magic["meteor"]["cd"][0] = 0
+        
+        #Tsunami spawn
+        if magic["tsunami"]["level"]>0:
+            if waveNum<=0:
+                magic["tsunami"]["cd"][0] += gameSpeed*magic["tsunami"]["mul"]["cd"]/trueSpeed
+                if magic["tsunami"]["cd"][0] >= magic["tsunami"]["cd"][1]:
+                    waveNum = magic["tsunami"]["num"]+magic["tsunami"]["mul"]["num"]
+                    magic["tsunami"]["cd"][0] = 0
+            else: #tsunami spawning sequence
+                magic["tsunami"]["seq"][0] += gameSpeed/trueSpeed
+                if magic["tsunami"]["seq"][0] >= magic["tsunami"]["seq"][1]:
+                    attacks["tsunami"].append(spawnObj("tsunami", [
+                        [-300, -300],
+                        ["tsunami.png"],
+                        magic["tsunami"]["spd"]*magic["tsunami"]["mul"]["spd"],
+                        np.array(magic["tsunami"]["size"])*magic["tsunami"]["mul"]["size"],
+                    ]))
+                    waveNum -= 1
+                    magic["tsunami"]["seq"][0] = 0
 
+        #Spirit attack spawn
+        if magic["spirit"]["level"] > 0:
+            magic["spirit"]["cd"][0] += gameSpeed*magic["spirit"]["mul"]["cd"]/trueSpeed
+            if magic["spirit"]["cd"][0] >= magic["spirit"]["cd"][1]:
+                copy = enemies[:]
+                num = len(attacks["spirit"])
+                for n in range(num):
+                    if len(copy)>0:
+                        closest = getClosest(copy, player.center)
+                        attacks["spirit_bullet"].append(spawnObj("spirit_bullet", [
+                            attacks["spirit"][n].center,
+                            ["spirit_bullet.png"],
+                            copy[closest].center,
+                            magic["spirit_bullet"]["spd"]*magic["spirit_bullet"]["mul"]["spd"],
+                            ])
+                        )
+                        copy.pop(closest)
+                        attacks["spirit_bullet"][-1].moveHitbox()
+                    else:
+                        break
+                magic["spirit"]["cd"][0] = 0
 
         #Mana level up
         if player.mana["amt"] >= player.mana["cap"]:
@@ -707,7 +753,10 @@ while running:
                 mag = magic[upgrade.magic]
                 up = mag["upgrades"][mag["level"]-1]
                 if mag["level"]>0:
-                    magic[upgrade.magic]["mul"][up[0]] += up[1]
+                    if upgrade.magic=="spirit" and up[0]=="dmg":
+                        magic["spirit_bullet"]["mul"][up[0]] += up[1]
+                    else:
+                        magic[upgrade.magic]["mul"][up[0]] += up[1]
                 magic[upgrade.magic]["level"] += 1
                 lvlUp = False 
                 
@@ -732,6 +781,23 @@ while running:
                         ]))
                     for i,sat in enumerate(attacks["satellite"]):
                         attacks["satellite"][i].orbitAngle = 360*i/len(attacks["satellite"])
+                
+                #Spawn Spirit
+                if upgrade.magic=="spirit":
+                    attacks["spirit"] = []
+                    num = magic["spirit"]["num"]+magic["spirit"]["mul"]["num"]
+                    for _ in range(num):
+                        attacks["spirit"].append(spawnObj("spirit", [
+                            [0,0],
+                            ["spirit.png"],
+                            5,
+                            0,
+                            50,
+                            player.center
+                        ]))
+                    for i,sat in enumerate(attacks["spirit"]):
+                        attacks["spirit"][i].orbitAngle = 360*i/len(attacks["spirit"])
+                        attacks["spirit"][i].mainMove()
 
         pg.display.update()
         #Refresh available magic upgrades

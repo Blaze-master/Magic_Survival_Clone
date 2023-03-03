@@ -134,7 +134,7 @@ def spawnObj(objType, props=[]):
         pos = np.array([np.cos(a)*d, np.sin(a)*d]) + props[2]
         return Bombard(pos-[150,500], props[0], pos, props[1], gameSpeed)
     if objType=="cyclone":
-        return MovingZone(props[0], props[1], props[2], props[3], props[4], props[5], props[6], gSpeed=gameSpeed)
+        return MovingZone(props[0], props[1], props[2], props[3], props[4], props[5], growth=props[6], gSpeed=gameSpeed)
     if objType=="electric_shock":
         target = np.random.rand(2) * [xmax, ymax]
         return PiercingProjectile(props[0], props[1], target, props[2], gSpeed=gameSpeed)
@@ -157,6 +157,14 @@ def spawnObj(objType, props=[]):
         return Bombard(pos-[400,600], props[0], pos, props[1], gameSpeed)
     if objType=="satellite":
         return Satellite(props[0], props[1], props[2], 0, props[3], props[4], props[5], gameSpeed)
+    if objType=="tsunami":
+        pos = (np.random.rand(2)*[500,300])+props[0]
+        target = [1400, 1000] + pos
+        return Tsunami(pos, props[1], target, props[2], props[3], gameSpeed)
+    if objType=="spirit":
+        return Satellite(props[0], props[1], props[2], 0, props[3], props[4], props[5], gameSpeed)
+    if objType=="spirit_bullet":
+        return PiercingProjectile(props[0], props[1], props[2], props[3], gSpeed=gameSpeed)
 
 def decipherUpgrade(magic):
     lvl = magic["level"]

@@ -405,6 +405,71 @@ magic = {
         "deets" : ["main_move", "static", "ball_col"]
     },
 
+    "tsunami": {
+        "dmg" : 66,
+        "spd" : 2,
+        "cd" : [0, 9],
+        "seq" : [0, 0.1],
+        "size" : [120, 240],
+        "num" : 8,
+        "mul" : {
+            "dmg" : 1,
+            "size" : 1,
+            "spd" : 1,
+            "cd" : 1,
+            "num" : 0,
+        },
+        "level" : 0,
+        "max" : 9, #9
+        "upgrades" : [
+            ("size", .1),
+            ("dmg", .3),
+            ("num", 3),
+            ("size", .1),
+            ("dmg", .3),
+            ("cd", .2),
+            ("num", 5),
+            ("dmg", .5),
+        ],
+        "description" : "Causes a large ocean wave to hit the field",
+        "deets" : ["main_move", "line_col", "despawn"]
+    },
+
+    "spirit": {
+        "num" : 1,
+        "cd" : [0, 1],
+        "mul" : {
+            "cd" : 1,
+            "num" : 0,
+        },
+        "level" : 0,
+        "max" : 9, #9
+        "upgrades" : [
+            ("num", 1),
+            ("dmg", .3),
+            ("cd", .3),
+            ("num", 2),
+            ("dmg", .3),
+            ("cd", .3),
+            ("num", 3),
+            ("dmg", .5),
+        ],
+        "description" : "Call a spirit to assist with attack",
+        "deets" : ["static"]
+    },
+
+    "spirit_bullet" : {
+        "dmg" : 70,
+        "spd" : 4,
+        "mul" : {
+            "dmg" : 1,
+            "spd" : 1,
+        },
+        "level" : 1,
+        "max" : 1,
+        "deets" : ["main_move", "line_col", "despawn"]
+    }
+
 }
 
 

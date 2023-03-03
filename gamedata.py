@@ -55,6 +55,7 @@ textY = (ymax-((textHeight*3) + (textMargin*2)))/2
 
 blizRad = 300
 blizNum = 0
+waveNum = 0
 min_shocks = 1
 
 if __name__ == "__main__": pass
