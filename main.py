@@ -24,6 +24,7 @@ pg.init()
 
 screen = pg.display.set_mode((xmax, ymax))
 running = True
+timerFont = pg.font.Font(fontType, 40)
 
 # mixer.music.load("Blizzard.mp3")
 # mixer.music.play(-1)
@@ -220,6 +221,7 @@ while running:
                 continue
         
         #Execute movement and damage for all attacks
+        amp = magic["magic_circle"]["amp"]*magic["magic_circle"]["mul"]["amp"] if len(attacks["magic_circle"])>0 else 1
         for mag in attacks.keys():
             if magic[mag]["level"]>0:
                 for i,att in enumerate(attacks[mag]):
@@ -240,6 +242,7 @@ while running:
                     if mag == "energy_bullet":
                         attacks[mag][i].moveSpeed -= 0.05
                         attacks[mag][i].moveSpeed = 0 if att.moveSpeed<=0 else att.moveSpeed
+                    
 
                     #Timers
                     interval = "int" in magic[mag].keys()
@@ -262,24 +265,24 @@ while running:
                         if (not id(enemy) in attacks[mag][i].hits) and (not interval or (interval and int_over)):
                             if "box_col" in det:
                                 if boxCollision(attacks[mag][i].hitbox, enemy.hitbox):
-                                    enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                    enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"]*amp)
                                     hit = True
                                     attacks[mag][i].hits.append(id(enemy))
                             if "ball_col" in det:
                                 if ballCollision(attacks[mag][i], enemy):
-                                    enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                    enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"]*amp)
                                     hit = True
                                     attacks[mag][i].hits.append(id(enemy))
                             if "line_col" in det:
                                 if mag=="flash_shock":
                                     if inBox(distToLine(enemies[j].center, attacks[mag][i].center, att.angle), attacks[mag][i].hitbox):
                                         if lineCollision(enemy, attacks[mag][i]):
-                                            enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                            enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"]*amp)
                                             attacks[mag][i].hits.append(id(enemy))
                                             hit = True
                                 elif boxCollision(enemy.hitbox, attacks[mag][i].hitbox):
                                     if lineCollision(enemy, attacks[mag][i]):
-                                        enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"])
+                                        enemies[j].hp -= (magic[mag]["dmg"]*magic[mag]["mul"]["dmg"]*amp)
                                         attacks[mag][i].hits.append(id(enemy))
                                         hit = True
                             if pen and len(attacks[mag][i].hits)>=magic[mag]["pen"]+magic[mag]["mul"]["pen"]: 
@@ -299,7 +302,7 @@ while running:
                                 attacks[mag][i].center,
                                 None,
                                 magic[mag]["rad"]*magic[mag]["mul"]["rad"],
-                                magic[mag]["dmg"]*magic[mag]["mul"]["dmg"],
+                                magic[mag]["dmg"]*magic[mag]["mul"]["dmg"]*amp,
                             ]))
                     
                     if dead:
@@ -381,8 +384,11 @@ while running:
             if plyrDmgCd<ticks:
                 for enemy in enemies:
                     if ballCollision(player, enemy) and not immortal:
-                        player.hp -= enemy.dmg
-                        healthBar.setLength(player.hp, 100)
+                        if len(attacks["shield"])>0:
+                            del attacks["shield"][0]
+                        else:
+                            player.hp -= enemy.dmg
+                            healthBar.setLength(player.hp, 100)
                         plyrDmgCd = ticks + 5
                         if player.hp <= 0:
                             running = False
@@ -661,6 +667,31 @@ while running:
                         break
                 magic["spirit"]["cd"][0] = 0
 
+        #Magic circle spawn
+        if magic["magic_circle"]["level"] > 0 and len(attacks["magic_circle"])<1 :
+            magic["magic_circle"]["cd"][0] += gameSpeed*magic["magic_circle"]["mul"]["cd"]/trueSpeed
+            if magic["magic_circle"]["cd"][0] >= magic["magic_circle"]["cd"][1]:
+                rad = 45
+                attacks["magic_circle"].append(spawnObj("magic_circle", [
+                    player.center-rad,
+                    ["magic_circle.png"],
+                    rad*2,
+                    magic["magic_circle"]["dur"]*magic["magic_circle"]["mul"]["dur"],
+                ]))
+                magic["magic_circle"]["cd"][0] = 0
+        
+        #Shield spawn
+        if magic["shield"]["level"] > 0 and len(attacks["shield"])<1 :
+            magic["shield"]["cd"][0] += gameSpeed*magic["shield"]["mul"]["cd"]/trueSpeed
+            if magic["shield"]["cd"][0] >= magic["shield"]["cd"][1]:
+                rad = 30
+                attacks["shield"].append(spawnObj("shield", [
+                    player.center-rad,
+                    ["shield_full.png"],
+                    rad*2,
+                ]))
+                magic["shield"]["cd"][0] = 0
+
         #Mana level up
         if player.mana["amt"] >= player.mana["cap"]:
             player.mana["amt"] -= player.mana["cap"]
@@ -691,6 +722,8 @@ while running:
         player.draw(screen)
         manaBar.draw(screen)
         healthBar.draw(screen)
+        timeDisplay = timerFont.render(formatTime(ticks), True, (255,255,255))
+        screen.blit(timeDisplay, (10,15))
 
         pg.display.update()
         pg.display.flip()
@@ -792,7 +825,7 @@ while running:
                             ["spirit.png"],
                             5,
                             0,
-                            50,
+                            40,
                             player.center
                         ]))
                     for i,sat in enumerate(attacks["spirit"]):

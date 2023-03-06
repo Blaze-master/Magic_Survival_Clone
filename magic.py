@@ -58,8 +58,8 @@ magic = {
     },
 
     "electric_zone" : {
-        "dmg" : 25.0,
-        "size" : 100.0,
+        "dmg" : 25,
+        "size" : 120,
         "int" : [0, .2],
         "mul" : {
             "dmg" : 1,
@@ -432,7 +432,7 @@ magic = {
             ("dmg", .5),
         ],
         "description" : "Causes a large ocean wave to hit the field",
-        "deets" : ["main_move", "line_col", "despawn"]
+        "deets" : ["main_move", "line_col", "despawn", "below"]
     },
 
     "spirit": {
@@ -468,8 +468,46 @@ magic = {
         "level" : 1,
         "max" : 1,
         "deets" : ["main_move", "line_col", "despawn"]
-    }
+    },
 
+    "magic_circle" : {
+        "amp" : 1,
+        "cd" : [0, 20],#20
+        "dur" : 4.8,
+        "mul" : {
+            "amp" : 1.25,
+            "cd" : 1,
+            "dur" : 1,
+        },
+        "level" : 0,
+        "max" : 4,
+        "upgrades" : [
+            ("dur", .2),
+            ("dur", .2),
+            ("dur", .2),
+            # ("amp", .05), #dur .2
+            # ("amp", .05), #dur .2
+            # ("amp", .05), #dur .2
+        ],
+        "description" : "Cast periodically to amplify all magic damage for the duration",
+        "deets" : ["static"]
+    },
+
+    "shield" : {
+        "cd" : [0, 33],
+        "mul" : {
+            "cd" : 1
+        },
+        "level" : 0,
+        "max" : 4,
+        "upgrades" : [
+            ("cd", .1),
+            ("cd", .1),
+            ("cd", .1),
+        ],
+        "description" : "Create a regenerating ring to protrct the character from one attack",
+        "deets" : ["static"]
+    }
 }
 
 
@@ -478,7 +516,7 @@ if testMagic:
     for x in magic.keys():
         if x != testMagic:
             magic[x]["max"] = 0
-    magic["magic_bullet"]["cd"][1] = np.inf
+    # magic["magic_bullet"]["cd"][1] = np.inf
     # magic[testMagic]["level"] = 1
     # magic["electric_zone"]["max"] = 1
 

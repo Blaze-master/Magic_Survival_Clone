@@ -90,6 +90,14 @@ def lineBoxCollision(obj, line):
     con = d1==d2 and d2==d3 and d3==d4
     return (not con) and (boxCollision(line, obj))
 
+def formatTime(ticks):
+    ticks /= 10
+    mins = m.floor(ticks/60)
+    secs = m.floor(ticks-(mins*60))
+    mins = "0"+str(mins) if mins<10 else str(mins)
+    secs = "0"+str(secs) if secs<10 else str(secs)
+    return mins+":"+secs
+
 def spawnObj(objType, props=[]):
     if objType=="enemy":
         xl0, yl0, xh0, yh0 = e_xmin, e_ymin, e_xmax, e_ymax
@@ -165,6 +173,10 @@ def spawnObj(objType, props=[]):
         return Satellite(props[0], props[1], props[2], 0, props[3], props[4], props[5], gameSpeed)
     if objType=="spirit_bullet":
         return PiercingProjectile(props[0], props[1], props[2], props[3], gSpeed=gameSpeed)
+    if objType=="magic_circle":
+        return Zone(props[0], props[1], props[2], props[3], gameSpeed)
+    if objType=="shield":
+        return Zone(props[0], props[1], props[2], np.inf, gameSpeed)
 
 def decipherUpgrade(magic):
     lvl = magic["level"]
@@ -179,7 +191,8 @@ def decipherUpgrade(magic):
             "dur" : "Duration",
             "num" : "Number",
             "pen" : "Penetration",
-            "rad" : "Explosion radius"
+            "rad" : "Explosion radius",
+            "amp" : "Amplification"
         }
         change = "reduces" if upgrade[0]=="int" or upgrade[0]=="cd" else "increases"
         upgradeText = convDic[upgrade[0]]
