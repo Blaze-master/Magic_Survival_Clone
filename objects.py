@@ -97,7 +97,7 @@ class NonPlayerObject(Object):
             "down" : [1, -self.speed]
         }
     
-    def move(self, direction, pSpeed):
+    def keyMove(self, direction, pSpeed):
         con1 = ("left" in direction or "right" in direction)
         con2 = ("up" in direction or "down" in direction)
         con = con1 and con2
@@ -333,7 +333,7 @@ class Satellite(Zone):
         self.orbitCen = orbitCen
     
     def mainMove(self):
-        self.orbitAngle += self.angularSpeed
+        self.orbitAngle += self.angularSpeed*self.speed/np.pi
         reset = self.orbitAngle >= 360
         self.orbitAngle -= 360 if reset else 0
         self.hits = [] if reset else self.hits

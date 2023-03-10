@@ -16,7 +16,6 @@ from enemies import *
 
 #Testing variables
 graph = False #Enable to record fps
-fuckIt = False #Ignore this
 immortal = False #Infinite health
 keyMove = True #Keyboard/mouse movement
 
@@ -50,11 +49,7 @@ for x in range(n):
     bg = Background([rd.randint(bg_xmin, bg_xmax), rd.randint(bg_ymin, bg_ymax)], "grass.png", gameSpeed)
     background.append(bg)
     
-#Spawn enemies
 enemies = []
-# n = 0 #5
-# for x in range(n): 
-#     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))#Health, damage, speed
 
 mana_items = []
 n = max_mana
@@ -89,7 +84,7 @@ optionScroll = 0
 
 while running:
     start = time.time()
-    if not lvlUp: screen.fill((0,100,0)) #0,150,0
+    if not lvlUp: screen.fill((80,60,80)) #0,100,0
 
     #Events o(n) can't do anything about this one's time complexity tho
     events = []
@@ -100,14 +95,14 @@ while running:
         if event.type == pg.QUIT:
             running = False
         if not lvlUp:
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    pause = not pause
             if not pause:
                 if keyMove:
                     direct = checkMovement(direct, event)
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     mouseMove = not mouseMove
-            if event.type == pg.KEYDOWN:
-                if event.key == pg.K_SPACE:
-                    pause = not pause
     
     if pause or lvlUp:
         direct = []
@@ -149,7 +144,7 @@ while running:
         #Object movements
         #Background movement o(n)
         for i, bg in enumerate(background):
-            if keyMove: background[i].move(direct, playerSpeed) 
+            if keyMove: background[i].keyMove(direct, playerSpeed) 
             if mouseMove: background[i].mouseMove(mouseDir, playerSpeed)
 
             #Background respawns if out of range
@@ -157,13 +152,12 @@ while running:
                 [bg_xmin, bg_xmax, bg_ymin, bg_ymax],
                 [xmin, xmax, ymin, ymax]
             )
-            # print(background[i].hitbox, screenBox)
-            if boxCollision(background[i].hitbox, screenBox) or fuckIt:
-                background[i].draw(screen)
+            
+            background[i].draw(screen)
         
         #Mana item movement o(n)
         for i, manaObj in enumerate(mana_items):
-            if keyMove: mana_items[i].move(direct, playerSpeed)
+            if keyMove: mana_items[i].keyMove(direct, playerSpeed)
             if mouseMove: mana_items[i].mouseMove(mouseDir, playerSpeed)
             
             #If oor, respawn and change rarity
@@ -180,15 +174,14 @@ while running:
             if boxCollision(player.hitbox, mana_items[i].hitbox):
                 player.mana["amt"] += manaObj.mana
                 total_mana += manaObj.mana
-                manaBar.setLength(player.mana["amt"], player.mana["cap"])
                 del mana_items[i]
                 continue
-            if boxCollision(mana_items[i].hitbox, screenBox) or fuckIt:
-                mana_items[i].draw(screen)
+            
+            mana_items[i].draw(screen)
         
         #Chest item movement o(n)
         for i,chest in enumerate(chests):
-            if keyMove: chests[i].move(direct, playerSpeed)
+            if keyMove: chests[i].keyMove(direct, playerSpeed)
             if mouseMove: chests[i].mouseMove(mouseDir, playerSpeed)
 
             #Chest despawns if out of range
@@ -199,13 +192,13 @@ while running:
             elif not inBox(chests[i].center, [[fs_xmin, fs_ymin],[fs_xmax, fs_ymax]]):
                 del chests[i]
                 continue
-            if boxCollision(chests[i].hitbox, screenBox):
-                chests[i].draw(screen)
+            
+            chests[i].draw(screen)
         
         #Enemy movement o(n)
         for i, obj in enumerate(enemies):
             #Enemy movement
-            if keyMove: enemies[i].move(direct, playerSpeed)
+            if keyMove: enemies[i].keyMove(direct, playerSpeed)
             if mouseMove: enemies[i].mouseMove(mouseDir, playerSpeed)
             if obj.type=="sprinter": 
                 enemies[i].mainMove()
@@ -230,7 +223,7 @@ while running:
 
                     #Movement and despawn
                     if not "static" in det:
-                        if keyMove: attacks[mag][i].move(direct, playerSpeed)
+                        if keyMove: attacks[mag][i].keyMove(direct, playerSpeed)
                         if mouseMove: attacks[mag][i].mouseMove(mouseDir, playerSpeed)
                     if "main_move" in det:
                         attacks[mag][i].mainMove()
@@ -256,7 +249,8 @@ while running:
                             attacks[mag][i].hits = []
                     if duration:
                         attacks[mag][i].duration -= gameSpeed/trueSpeed
-                        dead = attacks[mag][i].duration<=0
+                        if attacks[mag][i].duration<=0:
+                            dead = True
                     
                     #Damage
                     pen = "pen" in magic[mag].keys()
@@ -319,7 +313,6 @@ while running:
         for j,enemy in enumerate(enemies):
             if enemies[j].hp <= 0:
                 player.mana["amt"] += enemies[j].mana
-                manaBar.setLength(player.mana["amt"], player.mana["cap"])
                 enemies.remove(enemy)
                 score += 1
         
@@ -327,28 +320,25 @@ while running:
         for mag in attacks.keys():
             if magic[mag]["level"]>0 and ("below" in magic[mag]["deets"]):
                 for att in attacks[mag]:
-                    if boxCollision(att.hitbox, screenBox) or fuckIt:
-                        att.draw(screen)
+                    att.draw(screen)
         
-        #Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
+        # Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
             for j,other in enumerate(enemies):
                 if(enemy.type=="sprinter" or other.type=="sprinter"): continue
-                if(i>j) and ballCollision(enemy, other): #changed i!=j to i>j to cut execution time in half
+                if(i>j) and inRange(enemy.rad*0.9, other.center, enemy.center): #changed i!=j to i>j to cut execution time in half
                     dist = enemy.center - other.center
                     res = magnitude(dist)
-                    factor = (enemy.rad+other.rad)/res             
-                    move = dist*(factor-1)/2 #10
+                    factor = (enemy.rad+other.rad)*0.9/res             
+                    move = dist*(factor-1)/10 #10
                     enemies[i].pos += move
-            if boxCollision(enemies[i].hitbox, screenBox) or fuckIt:
-                enemies[i].draw(screen)
+            enemies[i].draw(screen)
 
         #Draw attacks above enemies
         for mag in attacks.keys():
             if magic[mag]["level"]>0 and not ("below" in magic[mag]["deets"]):
                 for att in attacks[mag]:
-                    if boxCollision(att.hitbox, screenBox) or fuckIt:
-                        att.draw(screen)
+                    att.draw(screen)
 
 
         #Event ticks
@@ -358,12 +348,14 @@ while running:
         if timer % tmp == 0 and timer != 0:
             ticks += 1
 
+            manaBar.setLength(player.mana["amt"],player.mana["cap"])
+
             if graph:
                 fps[0].append(ticks/10)
                 fps[1].append(trueSpeed/gameSpeed)
 
             #Enemy spawn
-            if ticks%2 == 0:
+            if ticks%1 == 0:
                 n = 1
                 for _ in range(n):
                     enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
@@ -393,22 +385,6 @@ while running:
                         if player.hp <= 0:
                             running = False
                         break
-
-        #Attack cooldowns
-        # for mag in attacks.keys():
-        #     if magic[mag]["level"]>0:
-        #         #Cooldown count
-        #         strike = False
-        #         if "cd" in magic[mag].keys():
-        #             magic[mag]["cd"][0] += gameSpeed*magic[mag]["mul"]["cd"]/trueSpeed
-        #             if magic[mag]["cd"][0]>=magic[mag]["cd"][1]:
-        #                 strike = True
-        #                 magic[mag]["cd"][0] = 0
-        #         if strike:
-        #             if "rd_spawn" in magic[mag]["deets"]:
-        #             else:
-        #                 if len(enemies)>0
-        #             attacks[mag].append(object)
 
 
         #Magic Bullet spawn
@@ -556,7 +532,7 @@ while running:
                 dist = magnitude([closest.center[0]-player.center[0], closest.center[1]-player.center[1]])*1.5
                 num = magic["energy_bullet"]["num"]+magic["energy_bullet"]["mul"]["num"]
                 for _ in range(num):
-                    si, sp = rd.randint(65, 135)/100, rd.randint(65, 135)/100
+                    si, sp = rd.randint(65, 135)/100, rd.randint(75, 125)/100
                     attacks["energy_bullet"].append(spawnObj("energy_bullet", [
                         player.center,
                         ["energy_bullet.png"],
@@ -691,6 +667,7 @@ while running:
                     rad*2,
                 ]))
                 magic["shield"]["cd"][0] = 0
+
 
         #Mana level up
         if player.mana["amt"] >= player.mana["cap"]:
