@@ -17,7 +17,8 @@ from enemies import *
 #Testing variables
 graph = False #Enable to record fps
 immortal = False #Infinite health
-keyMove = True #Keyboard/mouse movement
+
+keyMove = False #Keyboard/mouse movement
 
 pg.init()
 

@@ -60,10 +60,10 @@ def getCollPoint(angle1, angle2, line1, line2): #Key func
     angle2 = ((360-angle2)+90)
     angle1 -= 360 if angle1 >= 360 else 0
     angle2 -= 360 if angle2 >= 360 else 0
-    angle1 = np.tan(angle1*np.pi/180)
-    angle2 = np.tan(angle2*np.pi/180)
-    x = ((line2[1]-line1[1])-((angle2*line2[0])-(angle1*line1[0])))/(angle1-angle2)
-    y = line1[1]+angle1*(x-line1[0])
+    grad1 = np.tan(angle1*np.pi/180)
+    grad2 = np.tan(angle2*np.pi/180)
+    x = ((line2[1]-line1[1])-((grad2*line2[0])-(grad1*line1[0])))/(grad1-grad2)
+    y = line1[1]+grad1*(x-line1[0])
     return np.array([x,y])
 
 def distToLine(objPoint, point, angle): #angle represents pygame rotation angle #Key func

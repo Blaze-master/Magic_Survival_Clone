@@ -5,33 +5,6 @@ import random as rd
 import os
 from gamedata import textWidth, textHeight, textPadding
 
-class Text:
-    def __init__(self, fontType, size, color, pos, text, magic):
-        self.mainFont = pg.font.Font(fontType, size[0])
-        self.subFont = pg.font.Font(fontType, size[1])
-        self.mainText = self.mainFont.render(text[0], True, color[0])
-        self.subText = self.subFont.render(text[1], True, color[1])
-        self.bgPos = np.array(pos, dtype="float64")
-        self.bg = pg.rect.Rect(pos[0], pos[1], textWidth, textHeight)
-        self.bgColor = (0,0,0)
-        self.pos = self.bgPos + textPadding
-        self.highlighted = False
-        self.magic = magic
-        self.box = [self.bgPos, self.bgPos+[textWidth, textHeight]]
-    
-    def highlight(self):
-        self.highlighted = True
-        self.bgColor = (50,50,50)
-    
-    def dehighlight(self):
-        self.highlighted = False
-        self.bgColor = (0,0,0)
-    
-    def draw(self, screen):
-        pg.draw.rect(screen, self.bgColor, self.bg)
-        screen.blit(self.mainText, self.pos)
-        screen.blit(self.subText, self.pos+(0,50))
-
 class Object:
     def __init__(self, position, image):
         self.pos = np.array(position, dtype="float64")
@@ -343,6 +316,33 @@ class Satellite(Zone):
         self.pos = pos - (self.rad, self.rad)
         self.moveHitbox()
 
+
+class Text:
+    def __init__(self, fontType, size, color, pos, text, magic):
+        self.mainFont = pg.font.Font(fontType, size[0])
+        self.subFont = pg.font.Font(fontType, size[1])
+        self.mainText = self.mainFont.render(text[0], True, color[0])
+        self.subText = self.subFont.render(text[1], True, color[1])
+        self.bgPos = np.array(pos, dtype="float64")
+        self.bg = pg.rect.Rect(pos[0], pos[1], textWidth, textHeight)
+        self.bgColor = (0,0,0)
+        self.pos = self.bgPos + textPadding
+        self.highlighted = False
+        self.magic = magic
+        self.box = [self.bgPos, self.bgPos+[textWidth, textHeight]]
+    
+    def highlight(self):
+        self.highlighted = True
+        self.bgColor = (50,50,50)
+    
+    def dehighlight(self):
+        self.highlighted = False
+        self.bgColor = (0,0,0)
+    
+    def draw(self, screen):
+        pg.draw.rect(screen, self.bgColor, self.bg)
+        screen.blit(self.mainText, self.pos)
+        screen.blit(self.subText, self.pos+(0,50))
         
 
 if __name__ == "__main__": pass

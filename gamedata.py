@@ -2,8 +2,8 @@
 #trueSpeed represents pixels per second (p/s)
 #fps represents iterations per second (i/s)
 #gameSpeed represents pixels per iteration (p/i)
-fpsLimit = 60 #60
-trueSpeed = 200 #300
+fpsLimit = 90 #60
+trueSpeed = 200 #200
 gameSpeed = trueSpeed/fpsLimit
 
 #Metrics for recording passage of time
