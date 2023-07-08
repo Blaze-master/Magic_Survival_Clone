@@ -119,11 +119,11 @@ def spawnObj(objType, props=[]):
         x = rd.randint(xl0, xh0)
         y = y1 if y==1 else y2
     pos = [x,y]
-    if objType=="enemy":
-        return Enemy(pos, props[0], props[1], props[2], props[3], objType, gameSpeed)
+    if objType=="enemy" or objType=="splitter":
+        return Enemy(pos, props[0], props[1], props[2], props[3], props[4], objType, gameSpeed)
     if objType=="sprinter":
         tar = 2*np.array([xmax/2,ymax/2]) - np.array(pos)
-        return Sprinter(pos, props[0], props[1], props[2], props[3], objType, tar, gameSpeed)
+        return Sprinter(pos, props[0], props[1], props[2], props[3], props[4], objType, tar, gameSpeed)
     if objType=="mana item":
         return Mana(pos, rarity, props[0], gameSpeed)
     if objType=="chest":
@@ -177,6 +177,10 @@ def spawnObj(objType, props=[]):
         return Zone(props[0], props[1], props[2], props[3], gameSpeed)
     if objType=="shield":
         return Zone(props[0], props[1], props[2], np.inf, gameSpeed)
+
+def spawnEnemy(enemyType, enemyStats):
+    type = "enemy" if not (enemyType == "splitter" or enemyType == "sprinter") else enemyType
+    return spawnObj(type, [[enemyType+".png"], enemyStats["hp"], enemyStats["dmg"], enemyStats["spd"], enemyStats["mana"]])
 
 def decipherUpgrade(magic):
     lvl = magic["level"]

@@ -52,7 +52,7 @@ class Player(Object):
         self.mana = {
             "amt" : 0,
             "lvl" : 1,
-            "cap" : 50
+            "cap" : 100
         }
         self.artifacts = 0
 
@@ -109,7 +109,7 @@ class NonPlayerObject(Object):
 
 
 class Enemy(NonPlayerObject):
-    def __init__(self, position, images, hp, dmg, speed, enemyType, gSpeed):
+    def __init__(self, position, images, hp, dmg, speed, mana, enemyType, gSpeed):
         super().__init__(position, images[0], gSpeed)
         self.hp = hp
         self.dmg = dmg
@@ -117,7 +117,7 @@ class Enemy(NonPlayerObject):
         self.type = enemyType
         self.rad = self.image.get_width()/2
         self.center = self.pos+self.rad
-        self.mana = 5
+        self.mana = mana
     
     def mainMove(self, target):
         center = np.array(target) - [self.image.get_width()/2, self.image.get_height()/2]
@@ -127,8 +127,8 @@ class Enemy(NonPlayerObject):
         self.moveHitbox()
 
 class Sprinter(Enemy):
-    def __init__(self, position, images, hp, dmg, speed, enemyType, target, gSpeed):
-        super().__init__(position, images, hp, dmg, speed, enemyType, gSpeed)
+    def __init__(self, position, images, hp, dmg, speed, mana, enemyType, target, gSpeed):
+        super().__init__(position, images, hp, dmg, speed, mana, enemyType, gSpeed)
         self.target = target
     def mainMove(self):
         super().mainMove(self.target)

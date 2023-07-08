@@ -18,7 +18,7 @@ from enemies import *
 graph = False #Enable to record fps
 immortal = False #Infinite health
 
-keyMove = False #Keyboard/mouse movement
+keyMove = True #Keyboard/mouse movement
 
 pg.init()
 
@@ -51,6 +51,8 @@ for x in range(n):
     background.append(bg)
     
 enemies = []
+spawn_rate = 4 #enemies per second
+enemy_pool = spawn_pattern["0"]
 
 mana_items = []
 n = max_mana
@@ -234,7 +236,7 @@ while running:
                     if "expand" in det:
                         attacks[mag][i].grow(gameSpeed/trueSpeed)
                     if mag == "energy_bullet":
-                        attacks[mag][i].moveSpeed -= 0.05
+                        attacks[mag][i].moveSpeed -= 0.05 / gameSpeed
                         attacks[mag][i].moveSpeed = 0 if att.moveSpeed<=0 else att.moveSpeed
                     
 
@@ -314,10 +316,14 @@ while running:
         for j,enemy in enumerate(enemies):
             if enemies[j].hp <= 0:
                 player.mana["amt"] += enemies[j].mana
+                if enemy.type == "splitter":
+                    stat = enemyInfo["norm2"]
+                    enemies.append(Enemy(enemy.pos, ["norm2.png"], stat["hp"], stat["dmg"], stat["spd"], stat["mana"], "enemy", gameSpeed))
+                    enemies.append(Enemy(enemy.pos+1, ["norm2.png"], stat["hp"], stat["dmg"], stat["spd"], stat["mana"], "enemy", gameSpeed))
                 enemies.remove(enemy)
                 score += 1
         
-        #Draw attacks below enemies
+        #Draw attacks that are below enemies
         for mag in attacks.keys():
             if magic[mag]["level"]>0 and ("below" in magic[mag]["deets"]):
                 for att in attacks[mag]:
@@ -335,7 +341,7 @@ while running:
                     enemies[i].pos += move
             enemies[i].draw(screen)
 
-        #Draw attacks above enemies
+        #Draw attacks that are above enemies
         for mag in attacks.keys():
             if magic[mag]["level"]>0 and not ("below" in magic[mag]["deets"]):
                 for att in attacks[mag]:
@@ -354,13 +360,23 @@ while running:
             if graph:
                 fps[0].append(ticks/10)
                 fps[1].append(trueSpeed/gameSpeed)
+            
+            #Change enemy spawn patteerns
+            if ticks%600 == 0:
+                spawn_rate += 4
+                min = str(int(ticks/600))
+                if min in list(spawn_pattern.keys()):
+                    enemy_pool = spawn_pattern[min]
 
             #Enemy spawn
-            if ticks%1 == 0:
-                n = 1
-                for _ in range(n):
-                    enemies.append(spawnObj("enemy", [["enemy.png"], enemyHp, enemyDmg, enemySpeed]))
-                # enemies.append(spawnObj("sprinter", [["enemy.png"], enemyHp, enemyDmg, sprinterSpeed]))
+            if ticks%10 == 0:
+                probs = []
+                for enemy in enemy_pool:
+                    probs.append(enemyInfo[enemy]["weight"])
+                probs = np.array(probs)
+                spawns = np.random.choice(enemy_pool, spawn_rate, list(probs/probs.sum()))
+                for spawn in spawns:
+                    enemies.append(spawnEnemy(spawn, enemyInfo[spawn]))
 
             #Mana spawn
             mana_spawn = rd.randint(1, 5)
@@ -674,7 +690,7 @@ while running:
         if player.mana["amt"] >= player.mana["cap"]:
             player.mana["amt"] -= player.mana["cap"]
             player.mana["lvl"] += 1
-            player.mana["cap"] += 20 #Mana upgrade rate
+            player.mana["cap"] += 50 #Mana upgrade rate
 
             avail = False
             for n in range(3):
