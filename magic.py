@@ -511,7 +511,7 @@ magic = {
 }
 
 
-testMagic = None
+testMagic = "energy_bullet"
 if testMagic:
     for x in magic.keys():
         if x != testMagic:

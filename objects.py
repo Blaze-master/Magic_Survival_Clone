@@ -62,7 +62,7 @@ class Player(Object):
 class NonPlayerObject(Object):
     def __init__(self, position, image, gSpeed):
         super().__init__(position, image)
-        self.speed = gSpeed
+        self.speed = float(gSpeed)
         self.movement = {
             "left" : [0, self.speed],
             "right" : [0, -self.speed],
@@ -85,7 +85,7 @@ class NonPlayerObject(Object):
         self.moveHitbox()
     
     def changeSpeed(self, speed):
-        self.speed = speed
+        self.speed = float(speed)
         self.movement = {
             "left" : [0, self.speed],
             "right" : [0, -self.speed],
@@ -113,7 +113,7 @@ class Enemy(NonPlayerObject):
         super().__init__(position, images[0], gSpeed)
         self.hp = hp
         self.dmg = dmg
-        self.moveSpeed = speed
+        self.moveSpeed = float(speed)
         self.type = enemyType
         self.rad = self.image.get_width()/2
         self.center = self.pos+self.rad

@@ -17,6 +17,7 @@ from enemies import *
 #Testing variables
 graph = False #Enable to record fps
 immortal = False #Infinite health
+bot_play = False #Enable bot play
 
 keyMove = True #Keyboard/mouse movement
 
@@ -32,6 +33,10 @@ timerFont = pg.font.Font(fontType, 40)
 pause = False
 lvlUp = False
 mouseMove = not keyMove
+
+if bot_play:
+    keyMove = True
+    mouseMove = False
 
 playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
 pg.display.set_caption("Magic survival")
@@ -50,8 +55,9 @@ for x in range(n):
     bg = Background([rd.randint(bg_xmin, bg_xmax), rd.randint(bg_ymin, bg_ymax)], "grass.png", gameSpeed)
     background.append(bg)
     
+#Enemy Spawn
 enemies = []
-spawn_rate = 4 #enemies per second
+spawn_rate = 50 #enemies per second, 5
 enemy_pool = spawn_pattern["0"]
 
 mana_items = []
@@ -81,6 +87,7 @@ attacks["electric_zone"].append(Zone(
     ))
 
 direct = []
+bot_move = []
 if graph: fps = [[],[]]
 options = []
 optionScroll = 0
@@ -102,10 +109,13 @@ while running:
                 if event.key == pg.K_SPACE:
                     pause = not pause
             if not pause:
-                if keyMove:
+                if keyMove and not bot_play:
                     direct = checkMovement(direct, event)
-                elif event.type == pg.MOUSEBUTTONDOWN:
+                elif mouseMove and event.type == pg.MOUSEBUTTONDOWN:
                     mouseMove = not mouseMove
+    
+    if bot_play: #Moves every tick
+        direct = bot_move
     
     if pause or lvlUp:
         direct = []
@@ -132,7 +142,7 @@ while running:
                     playerAngle += 180
                 elif a[0]>0:
                     playerAngle += 360
-        else:
+        elif mouseMove:
             mousePos = np.array(pg.mouse.get_pos(), dtype="float64")
             mouseVec = mousePos - player.center
             magn = magnitude(mouseVec)
@@ -236,7 +246,7 @@ while running:
                     if "expand" in det:
                         attacks[mag][i].grow(gameSpeed/trueSpeed)
                     if mag == "energy_bullet":
-                        attacks[mag][i].moveSpeed -= 0.05 / gameSpeed
+                        attacks[mag][i].moveSpeed -= 2.5 * gameSpeed / trueSpeed
                         attacks[mag][i].moveSpeed = 0 if att.moveSpeed<=0 else att.moveSpeed
                     
 
@@ -328,6 +338,7 @@ while running:
             if magic[mag]["level"]>0 and ("below" in magic[mag]["deets"]):
                 for att in attacks[mag]:
                     att.draw(screen)
+                    pass
         
         # Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
@@ -340,14 +351,16 @@ while running:
                     move = dist*(factor-1)/10 #10
                     enemies[i].pos += move
             enemies[i].draw(screen)
+            pass
 
         #Draw attacks that are above enemies
         for mag in attacks.keys():
             if magic[mag]["level"]>0 and not ("below" in magic[mag]["deets"]):
                 for att in attacks[mag]:
                     att.draw(screen)
+                    pass
 
-
+        
         #Event ticks
         #Tick rate Manager
         tmp = int(round((trueSpeed/gameSpeed)/10))
@@ -363,7 +376,7 @@ while running:
             
             #Change enemy spawn patteerns
             if ticks%600 == 0:
-                spawn_rate += 4
+                spawn_rate += 5
                 min = str(int(ticks/600))
                 if min in list(spawn_pattern.keys()):
                     enemy_pool = spawn_pattern[min]
@@ -388,6 +401,12 @@ while running:
                 chest_spawn = rd.randint(1, 100)
                 if chest_spawn == 1 and len(chests) < max_chests:
                     chests.append(spawnObj("chest"))
+            
+            #Bot movement
+            if bot_play:
+                moves = np.array(["left", "right", "up", "down"])
+                choices = np.random.randint(0,2,4)
+                bot_move = moves[choices==1].tolist()
             
             #Player damage (takes damage only every 5 ticks)
             if plyrDmgCd<ticks:
@@ -549,7 +568,7 @@ while running:
                 dist = magnitude([closest.center[0]-player.center[0], closest.center[1]-player.center[1]])*1.5
                 num = magic["energy_bullet"]["num"]+magic["energy_bullet"]["mul"]["num"]
                 for _ in range(num):
-                    si, sp = rd.randint(65, 135)/100, rd.randint(75, 125)/100
+                    si, sp = rd.randint(65, 135)/100, rd.randint(80, 120)/100
                     attacks["energy_bullet"].append(spawnObj("energy_bullet", [
                         player.center,
                         ["energy_bullet.png"],
@@ -690,7 +709,7 @@ while running:
         if player.mana["amt"] >= player.mana["cap"]:
             player.mana["amt"] -= player.mana["cap"]
             player.mana["lvl"] += 1
-            player.mana["cap"] += 50 #Mana upgrade rate
+            player.mana["cap"] += (100*player.mana["lvl"]) #100 #Mana upgrade rate
 
             avail = False
             for n in range(3):
