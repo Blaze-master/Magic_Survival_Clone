@@ -168,7 +168,7 @@ def spawnObj(objType, props=[]):
     if objType=="tsunami":
         pos = (np.random.rand(2)*[500,300])+props[0]
         target = [1400, 1000] + pos
-        return Tsunami(pos, props[1], target, props[2], props[3], gameSpeed)
+        return Tsunami(pos, props[1], target, props[2], props[3], props[4], gameSpeed)
     if objType=="spirit":
         return Satellite(props[0], props[1], props[2], 0, props[3], props[4], props[5], gameSpeed)
     if objType=="spirit_bullet":

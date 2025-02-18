@@ -177,7 +177,7 @@ magic = {
 
     "electric_shock": {
         "dmg" : 75,
-        "spd" : 3,
+        "spd" : 5,
         "cd" : [0, 1.5], #[time since last attack, cooldown]
         "num" : 2,
         "mul" : {
@@ -411,12 +411,14 @@ magic = {
         "cd" : [0, 9],
         "seq" : [0, 0.1],
         "size" : [120, 240],
+        "dur" : 3,
         "num" : 8,
         "mul" : {
             "dmg" : 1,
             "size" : 1,
             "spd" : 1,
             "cd" : 1,
+            "dur": 1,
             "num" : 0,
         },
         "level" : 0,
@@ -511,7 +513,7 @@ magic = {
 }
 
 
-testMagic = "energy_bullet"
+testMagic = "tsunami"
 if testMagic:
     for x in magic.keys():
         if x != testMagic:

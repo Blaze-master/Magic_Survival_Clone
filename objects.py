@@ -185,12 +185,13 @@ class PiercingProjectile(Projectile):
         super().__init__(position, image, target, speed, gSpeed)
 
 class Tsunami(Projectile):
-    def __init__(self, position, image, target, speed, size, gSpeed):
+    def __init__(self, position, image, target, speed, size, duration, gSpeed):
         super().__init__(position, image, target, speed, gSpeed)
         self.image = self.loadImage(image[0])
         self.image = pg.transform.scale(self.image, size)
         self.image = pg.transform.rotate(self.image, self.angle)
         self.thickness = size[0]
+        self.duration = duration
 
 class Zone(NonPlayerObject):
     def __init__(self, position, images, diameter, duration, gSpeed):

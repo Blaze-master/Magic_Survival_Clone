@@ -2,7 +2,7 @@
 #trueSpeed represents pixels per second (p/s)
 #fps represents iterations per second (i/s)
 #gameSpeed represents pixels per iteration (p/i)
-fpsLimit = 9000 #60
+fpsLimit = 60 #60
 trueSpeed = 200 #200
 gameSpeed = trueSpeed/fpsLimit
 

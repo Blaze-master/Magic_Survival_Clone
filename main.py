@@ -57,7 +57,7 @@ for x in range(n):
     
 #Enemy Spawn
 enemies = []
-spawn_rate = 50 #enemies per second, 5
+spawn_rate = 5 #enemies per second, 5
 enemy_pool = spawn_pattern["0"]
 
 mana_items = []
@@ -109,10 +109,12 @@ while running:
                 if event.key == pg.K_SPACE:
                     pause = not pause
             if not pause:
-                if keyMove and not bot_play:
-                    direct = checkMovement(direct, event)
-                elif mouseMove and event.type == pg.MOUSEBUTTONDOWN:
-                    mouseMove = not mouseMove
+                if not bot_play:
+                    if keyMove:
+                        direct = checkMovement(direct, event)
+                    else:
+                        if event.type == pg.MOUSEBUTTONDOWN:
+                            mouseMove = not mouseMove
     
     if bot_play: #Moves every tick
         direct = bot_move
@@ -405,6 +407,7 @@ while running:
             #Bot movement
             if bot_play:
                 moves = np.array(["left", "right", "up", "down"])
+                # Bot decision making
                 choices = np.random.randint(0,2,4)
                 bot_move = moves[choices==1].tolist()
             
@@ -653,6 +656,7 @@ while running:
                         ["tsunami.png"],
                         magic["tsunami"]["spd"]*magic["tsunami"]["mul"]["spd"],
                         np.array(magic["tsunami"]["size"])*magic["tsunami"]["mul"]["size"],
+                        magic["tsunami"]["dur"]*magic["tsunami"]["mul"]["dur"]
                     ]))
                     waveNum -= 1
                     magic["tsunami"]["seq"][0] = 0
@@ -709,7 +713,7 @@ while running:
         if player.mana["amt"] >= player.mana["cap"]:
             player.mana["amt"] -= player.mana["cap"]
             player.mana["lvl"] += 1
-            player.mana["cap"] += (100*player.mana["lvl"]) #100 #Mana upgrade rate
+            player.mana["cap"] += 100 #(50*player.mana["lvl"]) #100 #Mana upgrade rate
 
             avail = False
             for n in range(3):
