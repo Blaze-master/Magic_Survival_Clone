@@ -513,7 +513,7 @@ magic = {
 }
 
 
-testMagic = "tsunami"
+testMagic = None
 if testMagic:
     for x in magic.keys():
         if x != testMagic:

@@ -15,20 +15,21 @@ from artifacts import *
 from enemies import *
 
 #Testing variables
-graph = False #Enable to record fps
-immortal = False #Infinite health
+show_stats = True #Show statistics at the end of a game
+graph_fps = False #Enable to record fps
+immortal = True #Infinite health
 bot_play = False #Enable bot play
 
-keyMove = True #Keyboard/mouse movement
+keyMove = False #Keyboard/mouse movement
+
+# mixer.music.load("Blizzard.mp3")
+# mixer.music.play(-1)
 
 pg.init()
 
 screen = pg.display.set_mode((xmax, ymax))
 running = True
 timerFont = pg.font.Font(fontType, 40)
-
-# mixer.music.load("Blizzard.mp3")
-# mixer.music.play(-1)
 
 pause = False
 lvlUp = False
@@ -88,7 +89,7 @@ attacks["electric_zone"].append(Zone(
 
 direct = []
 bot_move = []
-if graph: fps = [[],[]]
+if graph_fps: fps = [[],[]]
 options = []
 optionScroll = 0
 
@@ -246,9 +247,9 @@ while running:
                         if not inBox(attacks[mag][i].center, [[e_xmin, e_ymin],[e_xmax, e_ymax]]):
                             dead = True
                     if "expand" in det:
-                        attacks[mag][i].grow(gameSpeed/trueSpeed)
+                        attacks[mag][i].grow(gameSpeed/constSpeed)
                     if mag == "energy_bullet":
-                        attacks[mag][i].moveSpeed -= 2.5 * gameSpeed / trueSpeed
+                        attacks[mag][i].moveSpeed -= 2.5 * gameSpeed / constSpeed
                         attacks[mag][i].moveSpeed = 0 if att.moveSpeed<=0 else att.moveSpeed
                     
 
@@ -257,13 +258,13 @@ while running:
                     duration = "dur" in magic[mag].keys()
                     int_over = False
                     if interval:
-                        magic[mag]["int"][0] += gameSpeed*magic[mag]["mul"]["int"]/trueSpeed
+                        magic[mag]["int"][0] += gameSpeed*magic[mag]["mul"]["int"]/constSpeed
                         if magic[mag]["int"][0]>=magic[mag]["int"][1]:
                             int_over = True
                             magic[mag]["int"][0] = 0
                             attacks[mag][i].hits = []
                     if duration:
-                        attacks[mag][i].duration -= gameSpeed/trueSpeed
+                        attacks[mag][i].duration -= gameSpeed/constSpeed
                         if attacks[mag][i].duration<=0:
                             dead = True
                     
@@ -365,14 +366,14 @@ while running:
         
         #Event ticks
         #Tick rate Manager
-        tmp = int(round((trueSpeed/gameSpeed)/10))
+        tmp = int(round((constSpeed/gameSpeed)/10))
         tmp = tmp if tmp>0 else 1
         if timer % tmp == 0 and timer != 0:
             ticks += 1
 
             manaBar.setLength(player.mana["amt"],player.mana["cap"])
 
-            if graph:
+            if graph_fps:
                 fps[0].append(ticks/10)
                 fps[1].append(trueSpeed/gameSpeed)
             
@@ -427,7 +428,7 @@ while running:
 
 
         #Magic Bullet spawn
-        magic["magic_bullet"]["cd"][0] += gameSpeed*magic["magic_bullet"]["mul"]["cd"]/trueSpeed
+        magic["magic_bullet"]["cd"][0] += gameSpeed*magic["magic_bullet"]["mul"]["cd"]/200
         if magic["magic_bullet"]["cd"][0] >= magic["magic_bullet"]["cd"][1]:
             #Magic bullet spawn o(n)
             if len(enemies)>0:
@@ -443,7 +444,7 @@ while running:
 
         #Lavazone spawn
         if magic["lavazone"]["level"] > 0:
-            magic["lavazone"]["cd"][0] += gameSpeed*magic["lavazone"]["mul"]["cd"]/trueSpeed
+            magic["lavazone"]["cd"][0] += gameSpeed*magic["lavazone"]["mul"]["cd"]/constSpeed
             if magic["lavazone"]["cd"][0] >= magic["lavazone"]["cd"][1] and magic["lavazone"]["level"] > 0:
                 pos = (np.random.rand(2) * [xmax, ymax]) - magic["lavazone"]["size"]*magic["lavazone"]["mul"]["size"]
                 attacks["lavazone"].append(spawnObj("lavazone", [
@@ -456,7 +457,7 @@ while running:
 
         #Arcane ray spawn
         if magic["arcane_ray"]["level"] > 0:
-            magic["arcane_ray"]["cd"][0] += gameSpeed*magic["arcane_ray"]["mul"]["cd"]/trueSpeed
+            magic["arcane_ray"]["cd"][0] += gameSpeed*magic["arcane_ray"]["mul"]["cd"]/constSpeed
             if magic["arcane_ray"]["cd"][0] >= magic["arcane_ray"]["cd"][1] and len(enemies) > 0:
                 copy = enemies[:]
                 for n in range(round(magic["arcane_ray"]["num"]+magic["arcane_ray"]["mul"]["num"])):
@@ -476,12 +477,12 @@ while running:
         #Blizzard spawn
         if magic["blizzard"]["level"]>0:
             if blizNum<=0:
-                magic["blizzard"]["cd"][0] += gameSpeed*magic["blizzard"]["mul"]["cd"]/trueSpeed
+                magic["blizzard"]["cd"][0] += gameSpeed*magic["blizzard"]["mul"]["cd"]/constSpeed
                 if magic["blizzard"]["cd"][0] >= magic["blizzard"]["cd"][1]:
                     blizNum = magic["blizzard"]["num"]+magic["blizzard"]["mul"]["num"]
                     magic["blizzard"]["cd"][0] = 0
             else: #Blizzard spawning sequence
-                magic["blizzard"]["int"][0] += gameSpeed*magic["blizzard"]["mul"]["int"]/trueSpeed
+                magic["blizzard"]["int"][0] += gameSpeed*magic["blizzard"]["mul"]["int"]/constSpeed
                 if magic["blizzard"]["int"][0] >= magic["blizzard"]["int"][1]:
                     attacks["blizzard"].append(spawnObj("blizzard", [
                         ["blizzard.png"],
@@ -493,7 +494,7 @@ while running:
             
         #Cyclone spawn
         if magic["cyclone"]["level"] > 0:
-            magic["cyclone"]["cd"][0] += gameSpeed*magic["cyclone"]["mul"]["cd"]/trueSpeed
+            magic["cyclone"]["cd"][0] += gameSpeed*magic["cyclone"]["mul"]["cd"]/constSpeed
             if magic["cyclone"]["cd"][0] >= magic["cyclone"]["cd"][1] and len(enemies) > 0:
                 closest = enemies[getClosest(enemies, player.center)]
                 g = magic["cyclone"]["growth"]
@@ -511,7 +512,7 @@ while running:
         
         #Electric shock spawn
         if magic["electric_shock"]["level"] > 0:
-            magic["electric_shock"]["cd"][0] += gameSpeed*magic["electric_shock"]["mul"]["cd"]/trueSpeed
+            magic["electric_shock"]["cd"][0] += gameSpeed*magic["electric_shock"]["mul"]["cd"]/constSpeed
             if magic["electric_shock"]["cd"][0] >= magic["electric_shock"]["cd"][1] and len(enemies) > 0:
                 # num = round(magic["electric_shock"]["num"]+magic["electric_shock"]["mul"]["num"])
                 num = rd.randint(min_shocks, round(magic["electric_shock"]["num"]+magic["electric_shock"]["mul"]["num"]))
@@ -525,7 +526,7 @@ while running:
 
         #Fire ball spawn
         if magic["fireball"]["level"] > 0:
-            magic["fireball"]["cd"][0] += gameSpeed*magic["fireball"]["mul"]["cd"]/trueSpeed
+            magic["fireball"]["cd"][0] += gameSpeed*magic["fireball"]["mul"]["cd"]/constSpeed
             if magic["fireball"]["cd"][0] >= magic["fireball"]["cd"][1]:
                 #Fire ball spawn o(n)
                 if len(enemies)>0:
@@ -541,7 +542,7 @@ while running:
         
         #Flash shock spawn
         if magic["flash_shock"]["level"] > 0:
-            magic["flash_shock"]["cd"][0] += gameSpeed*magic["flash_shock"]["mul"]["cd"]/trueSpeed
+            magic["flash_shock"]["cd"][0] += gameSpeed*magic["flash_shock"]["mul"]["cd"]/constSpeed
             if magic["flash_shock"]["cd"][0] >= magic["flash_shock"]["cd"][1]:
                 box = screenBox
                 hor = getCollPoint(playerAngle, 90, player.center, box[0])
@@ -565,7 +566,7 @@ while running:
 
         #Energy bullet spawn
         if magic["energy_bullet"]["level"] > 0:
-            magic["energy_bullet"]["cd"][0] += gameSpeed*magic["energy_bullet"]["mul"]["cd"]/trueSpeed
+            magic["energy_bullet"]["cd"][0] += gameSpeed*magic["energy_bullet"]["mul"]["cd"]/constSpeed
             if magic["energy_bullet"]["cd"][0] >= magic["energy_bullet"]["cd"][1] and len(enemies) > 0:
                 closest = enemies[getClosest(enemies, player.center)]
                 dist = magnitude([closest.center[0]-player.center[0], closest.center[1]-player.center[1]])*1.5
@@ -584,7 +585,7 @@ while running:
 
         #Frost nova spawn
         if magic["frost_nova"]["level"] > 0:
-            magic["frost_nova"]["cd"][0] += gameSpeed*magic["frost_nova"]["mul"]["cd"]/trueSpeed
+            magic["frost_nova"]["cd"][0] += gameSpeed*magic["frost_nova"]["mul"]["cd"]/constSpeed
             if magic["frost_nova"]["cd"][0] >= magic["frost_nova"]["cd"][1] and magic["frost_nova"]["level"] > 0:
                 pos = player.center - (magic["frost_nova"]["rad"]*magic["frost_nova"]["mul"]["rad"])
                 attacks["frost_nova"].append(spawnObj("frost_nova", [
@@ -605,7 +606,7 @@ while running:
 
         #Thunderstorm spawn
         if magic["thunderstorm"]["level"] > 0:
-            magic["thunderstorm"]["cd"][0] += gameSpeed*magic["thunderstorm"]["mul"]["cd"]/trueSpeed
+            magic["thunderstorm"]["cd"][0] += gameSpeed*magic["thunderstorm"]["mul"]["cd"]/constSpeed
             if magic["thunderstorm"]["cd"][0] >= magic["thunderstorm"]["cd"][1] and len(enemies) > 0:
                 copy = enemies
                 size = pg.image.load(os.path.join(os.path.dirname(__file__),"assets", "lightening.png"))
@@ -632,7 +633,7 @@ while running:
 
         #Meteor spawn
         if magic["meteor"]["level"]>0:
-            magic["meteor"]["cd"][0] += gameSpeed*magic["meteor"]["mul"]["cd"]/trueSpeed
+            magic["meteor"]["cd"][0] += gameSpeed*magic["meteor"]["mul"]["cd"]/constSpeed
             if magic["meteor"]["cd"][0] >= magic["meteor"]["cd"][1]:
                 attacks["meteor"].append(spawnObj("meteor", [
                     ["meteor.png"],
@@ -644,12 +645,12 @@ while running:
         #Tsunami spawn
         if magic["tsunami"]["level"]>0:
             if waveNum<=0:
-                magic["tsunami"]["cd"][0] += gameSpeed*magic["tsunami"]["mul"]["cd"]/trueSpeed
+                magic["tsunami"]["cd"][0] += gameSpeed*magic["tsunami"]["mul"]["cd"]/constSpeed
                 if magic["tsunami"]["cd"][0] >= magic["tsunami"]["cd"][1]:
                     waveNum = magic["tsunami"]["num"]+magic["tsunami"]["mul"]["num"]
                     magic["tsunami"]["cd"][0] = 0
             else: #tsunami spawning sequence
-                magic["tsunami"]["seq"][0] += gameSpeed/trueSpeed
+                magic["tsunami"]["seq"][0] += gameSpeed/constSpeed
                 if magic["tsunami"]["seq"][0] >= magic["tsunami"]["seq"][1]:
                     attacks["tsunami"].append(spawnObj("tsunami", [
                         [-300, -300],
@@ -663,7 +664,7 @@ while running:
 
         #Spirit attack spawn
         if magic["spirit"]["level"] > 0:
-            magic["spirit"]["cd"][0] += gameSpeed*magic["spirit"]["mul"]["cd"]/trueSpeed
+            magic["spirit"]["cd"][0] += gameSpeed*magic["spirit"]["mul"]["cd"]/constSpeed
             if magic["spirit"]["cd"][0] >= magic["spirit"]["cd"][1]:
                 copy = enemies[:]
                 num = len(attacks["spirit"])
@@ -685,7 +686,7 @@ while running:
 
         #Magic circle spawn
         if magic["magic_circle"]["level"] > 0 and len(attacks["magic_circle"])<1 :
-            magic["magic_circle"]["cd"][0] += gameSpeed*magic["magic_circle"]["mul"]["cd"]/trueSpeed
+            magic["magic_circle"]["cd"][0] += gameSpeed*magic["magic_circle"]["mul"]["cd"]/constSpeed
             if magic["magic_circle"]["cd"][0] >= magic["magic_circle"]["cd"][1]:
                 rad = 45
                 attacks["magic_circle"].append(spawnObj("magic_circle", [
@@ -698,7 +699,7 @@ while running:
         
         #Shield spawn
         if magic["shield"]["level"] > 0 and len(attacks["shield"])<1 :
-            magic["shield"]["cd"][0] += gameSpeed*magic["shield"]["mul"]["cd"]/trueSpeed
+            magic["shield"]["cd"][0] += gameSpeed*magic["shield"]["mul"]["cd"]/constSpeed
             if magic["shield"]["cd"][0] >= magic["shield"]["cd"][1]:
                 rad = 30
                 attacks["shield"].append(spawnObj("shield", [
@@ -713,7 +714,7 @@ while running:
         if player.mana["amt"] >= player.mana["cap"]:
             player.mana["amt"] -= player.mana["cap"]
             player.mana["lvl"] += 1
-            player.mana["cap"] += 100 #(50*player.mana["lvl"]) #100 #Mana upgrade rate
+            player.mana["cap"] += 140 #(50*player.mana["lvl"]) #100 #Mana upgrade rate
 
             avail = False
             for n in range(3):
@@ -858,15 +859,15 @@ while running:
             while None in availableMagic:
                 availableMagic.remove(None)
 
+if show_stats:
+    print("Mana level :", player.mana["lvl"])
+    print("Total mana collected:", total_mana)
+    print("Artifacts collected :", player.artifacts)
+    print("Enemies killed :", score)
+    print("Player health :", player.hp)
+    print("Time :", ticks/10, "secs")
 
-print("Mana level :", player.mana["lvl"])
-print("Total mana collected:", total_mana)
-print("Artifacts collected :", player.artifacts)
-print("Enemies killed :", score)
-print("Player health :", player.hp)
-print("Time :", ticks/10, "secs")
-
-if graph:
+if graph_fps:
     print("Average fps: ", np.array(fps[1]).mean())
     plt.plot(fps[0], fps[1])
     plt.show()

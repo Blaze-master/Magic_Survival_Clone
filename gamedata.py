@@ -5,6 +5,8 @@
 fpsLimit = 60 #60
 trueSpeed = 200 #200
 gameSpeed = trueSpeed/fpsLimit
+constSpeed = 200 #200 #Standardizes passage of time for 1 in-game second (trueSpeed - real-life second(s): 200 - 1s, 100 to 2s, 400 to 0.5s)
+# trueSpeed : constSpeed = in-game time : real-life time
 
 #Metrics for recording passage of time
 timer = 0 #Frame counter
