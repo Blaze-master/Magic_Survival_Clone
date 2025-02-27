@@ -17,8 +17,8 @@ from enemies import *
 #Testing variables
 show_stats = True #Show statistics at the end of a game
 graph_fps = False #Enable to record fps
-immortal = True #Infinite health
-bot_play = False #Enable bot play
+immortal = False #Infinite health
+bot_play = True #Enable bot play
 
 keyMove = False #Keyboard/mouse movement
 
@@ -35,6 +35,7 @@ pause = False
 lvlUp = False
 mouseMove = not keyMove
 
+ai_mode = "train" #train/test
 if bot_play:
     keyMove = True
     mouseMove = False
@@ -58,7 +59,7 @@ for x in range(n):
     
 #Enemy Spawn
 enemies = []
-spawn_rate = 5 #enemies per second, 5
+spawn_rate = base_spawn_rate
 enemy_pool = spawn_pattern["0"]
 
 mana_items = []
@@ -87,6 +88,13 @@ attacks["electric_zone"].append(Zone(
     gameSpeed
     ))
 
+#Tracked values
+score = 0
+total_mana = 0
+#Metrics for recording passage of time
+timer = 0 #Frame counter
+ticks = 0 #1/10th of a second
+
 direct = []
 bot_move = []
 if graph_fps: fps = [[],[]]
@@ -95,6 +103,7 @@ optionScroll = 0
 
 while running:
     start = time.time()
+    alive = True
     if not lvlUp: screen.fill((80,60,80)) #0,100,0
 
     #Events o(n) can't do anything about this one's time complexity tho
@@ -343,7 +352,7 @@ while running:
                     att.draw(screen)
                     pass
         
-        # Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
+        #Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
             for j,other in enumerate(enemies):
                 if(enemy.type=="sprinter" or other.type=="sprinter"): continue
@@ -423,7 +432,7 @@ while running:
                             healthBar.setLength(player.hp, 100)
                         plyrDmgCd = ticks + 5
                         if player.hp <= 0:
-                            running = False
+                            alive = False
                         break
 
 
@@ -714,7 +723,7 @@ while running:
         if player.mana["amt"] >= player.mana["cap"]:
             player.mana["amt"] -= player.mana["cap"]
             player.mana["lvl"] += 1
-            player.mana["cap"] += 140 #(50*player.mana["lvl"]) #100 #Mana upgrade rate
+            player.mana["cap"] += 125 #(50*player.mana["lvl"]) #100 #Mana upgrade rate
 
             avail = False
             for n in range(3):
@@ -766,6 +775,67 @@ while running:
             if magic[mag]["level"]>0:
                 for i,att in enumerate(attacks[mag]):
                     attacks[mag][i].changeSpeed(gameSpeed)
+        
+        if not alive:
+            #Reset states
+            if bot_play and ai_mode == "train":
+                player = Player([(xmax-pw)/2, (ymax-ph)/2], ["player1.png"])
+                plyrDmgCd = 0
+                healthBar.setLength(player.hp, 100)
+
+                #Spawn backgrounds
+                background = []
+                n = 50 #50
+                for x in range(n):
+                    bg = Background([rd.randint(bg_xmin, bg_xmax), rd.randint(bg_ymin, bg_ymax)], "grass.png", gameSpeed)
+                    background.append(bg)
+                    
+                #Enemy Spawn
+                enemies = []
+                spawn_rate = base_spawn_rate
+                enemy_pool = spawn_pattern["0"]
+
+                mana_items = []
+                n = max_mana
+                for x in range(n):
+                    mana_items.append(spawnObj("mana item", [attractSpeed]))
+
+                chests = []
+                n = 1
+                for x in range(n):
+                    chests.append(spawnObj("chest"))
+
+                #Attacks
+                for x in magic.keys():
+                    magic[x]["level"] = 0
+                magic["magic_bullet"]["level"] = 1
+                magic["spirit_bullet"]["level"] = 1
+                attacks = {x : [] for x in magic.keys()} #All attacks integrated into one dictionary
+                explosions = []
+                attacks["electric_zone"].append(Zone(
+                    (player.center-[magic["electric_zone"]["size"]/2, magic["electric_zone"]["size"]/2]),
+                    ["electric_zone.png"],
+                    magic["electric_zone"]["size"],
+                    np.inf,
+                    gameSpeed
+                    ))
+
+                #Tracked values
+                score = 0
+                total_mana = 0
+                #Metrics for recording passage of time
+                timer = 0 #Frame counter
+                ticks = 0 #1/10th of a second
+
+                direct = []
+                bot_move = []
+                if graph_fps: fps = [[],[]]
+                options = []
+                optionScroll = 0
+            
+            #End game
+            else:
+                running = False
     
     #Level up display
     elif lvlUp:

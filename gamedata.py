@@ -8,15 +8,9 @@ gameSpeed = trueSpeed/fpsLimit
 constSpeed = 200 #200 #Standardizes passage of time for 1 in-game second (trueSpeed - real-life second(s): 200 - 1s, 100 to 2s, 400 to 0.5s)
 # trueSpeed : constSpeed = in-game time : real-life time
 
-#Metrics for recording passage of time
-timer = 0 #Frame counter
-ticks = 0 #1/10th of a second
-
 #Coefficients
 playerSpeed = 1.0
 attractSpeed = 1.6
-score = 0
-total_mana = 0
 
 #View screen box
 xmax, ymax = 1160, 610

@@ -1,6 +1,7 @@
 enemySpeed = 0.8
 enemyHp = 30
 enemyDmg = 10
+base_spawn_rate = 5 #enemies per second, 5
 
 sprinterSpeed = 1.5 #1.5
 
