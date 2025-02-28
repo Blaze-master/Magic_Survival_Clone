@@ -1,6 +1,5 @@
 import pygame as pg
 import random as rd
-import math as m
 import time
 import os
 import numpy as np
@@ -13,14 +12,15 @@ from magic import *
 from functions import *
 from artifacts import *
 from enemies import *
+from ai import *
 
 #Testing variables
 show_stats = True #Show statistics at the end of a game
 graph_fps = False #Enable to record fps
 immortal = False #Infinite health
-bot_play = True #Enable bot play
+bot_play = False #Enable bot play
 
-keyMove = False #Keyboard/mouse movement
+keyMove = True #Keyboard/mouse movement
 
 # mixer.music.load("Blizzard.mp3")
 # mixer.music.play(-1)
@@ -35,12 +35,23 @@ pause = False
 lvlUp = False
 mouseMove = not keyMove
 
+#AI setup
 ai_mode = "train" #train/test
+model_name = "basic_ddqn_1"
+model_path = os.path.join(os.path.dirname(__file__), "models", model_name)
 if bot_play:
     keyMove = True
     mouseMove = False
 
-playerImg = pg.image.load(os.path.join(os.path.dirname(__file__),"assets","player1.png"))
+    if ai_mode == "test":
+        model = load_model(model_path)
+    elif ai_mode == "train":
+        trainer = Trainer(
+            model_path,
+            num_episodes=50,
+        )
+
+playerImg = pg.image.load(os.path.join(os.path.dirname(__file__), "assets", "player1.png"))
 pg.display.set_caption("Magic survival")
 pg.display.set_icon(playerImg)
 
@@ -103,6 +114,8 @@ optionScroll = 0
 
 while running:
     start = time.time()
+    tmp = int(round((constSpeed/gameSpeed)/10)) #Tick rate timer (0.1s converted to frames)
+    tmp = tmp if tmp>0 else 1
     alive = True
     if not lvlUp: screen.fill((80,60,80)) #0,100,0
 
@@ -127,6 +140,15 @@ while running:
                             mouseMove = not mouseMove
     
     if bot_play: #Moves every tick
+        if timer % tmp == 0 and timer != 0:
+            moves = np.array(["left", "right", "up", "down"])
+            # Bot decision making
+            choices = np.random.randint(0,2,4) #Random choice
+            if ai_mode == "train":
+                choices = trainer.rl_model.action_space[trainer.get_action(...)] #state
+            elif ai_mode == "test":
+                choices = model.action_space[model.play_one_step(..., epsilon=0.0, training=False)] #state
+            bot_move = moves[choices==1].tolist()
         direct = bot_move
     
     if pause or lvlUp:
@@ -375,8 +397,6 @@ while running:
         
         #Event ticks
         #Tick rate Manager
-        tmp = int(round((constSpeed/gameSpeed)/10))
-        tmp = tmp if tmp>0 else 1
         if timer % tmp == 0 and timer != 0:
             ticks += 1
 
@@ -414,13 +434,6 @@ while running:
                 if chest_spawn == 1 and len(chests) < max_chests:
                     chests.append(spawnObj("chest"))
             
-            #Bot movement
-            if bot_play:
-                moves = np.array(["left", "right", "up", "down"])
-                # Bot decision making
-                choices = np.random.randint(0,2,4)
-                bot_move = moves[choices==1].tolist()
-            
             #Player damage (takes damage only every 5 ticks)
             if plyrDmgCd<ticks:
                 for enemy in enemies:
@@ -434,6 +447,12 @@ while running:
                         if player.hp <= 0:
                             alive = False
                         break
+
+            #Environment response to bot
+            if bot_play and ai_mode == "train":
+                trainer.receive_response(...) # new_state, reward, done, truncated
+                if trainer.num_steps and trainer.current_step == trainer.num_steps:
+                    alive = False
 
 
         #Magic Bullet spawn
@@ -723,7 +742,7 @@ while running:
         if player.mana["amt"] >= player.mana["cap"]:
             player.mana["amt"] -= player.mana["cap"]
             player.mana["lvl"] += 1
-            player.mana["cap"] += 125 #(50*player.mana["lvl"]) #100 #Mana upgrade rate
+            player.mana["cap"] += 110 #(50*player.mana["lvl"]) #100 #Mana upgrade rate
 
             avail = False
             for n in range(3):
@@ -776,62 +795,68 @@ while running:
                 for i,att in enumerate(attacks[mag]):
                     attacks[mag][i].changeSpeed(gameSpeed)
         
+        #On death
         if not alive:
             #Reset states
             if bot_play and ai_mode == "train":
-                player = Player([(xmax-pw)/2, (ymax-ph)/2], ["player1.png"])
-                plyrDmgCd = 0
-                healthBar.setLength(player.hp, 100)
+                trainer.end_episode()
 
-                #Spawn backgrounds
-                background = []
-                n = 50 #50
-                for x in range(n):
-                    bg = Background([rd.randint(bg_xmin, bg_xmax), rd.randint(bg_ymin, bg_ymax)], "grass.png", gameSpeed)
-                    background.append(bg)
-                    
-                #Enemy Spawn
-                enemies = []
-                spawn_rate = base_spawn_rate
-                enemy_pool = spawn_pattern["0"]
+                if trainer.current_episode >= trainer.num_episodes:
+                    running = False
+                else:
+                    player = Player([(xmax-pw)/2, (ymax-ph)/2], ["player1.png"])
+                    plyrDmgCd = 0
+                    healthBar.setLength(player.hp, 100)
 
-                mana_items = []
-                n = max_mana
-                for x in range(n):
-                    mana_items.append(spawnObj("mana item", [attractSpeed]))
+                    #Spawn backgrounds
+                    background = []
+                    n = 50 #50
+                    for x in range(n):
+                        bg = Background([rd.randint(bg_xmin, bg_xmax), rd.randint(bg_ymin, bg_ymax)], "grass.png", gameSpeed)
+                        background.append(bg)
+                        
+                    #Enemy Spawn
+                    enemies = []
+                    spawn_rate = base_spawn_rate
+                    enemy_pool = spawn_pattern["0"]
 
-                chests = []
-                n = 1
-                for x in range(n):
-                    chests.append(spawnObj("chest"))
+                    mana_items = []
+                    n = max_mana
+                    for x in range(n):
+                        mana_items.append(spawnObj("mana item", [attractSpeed]))
 
-                #Attacks
-                for x in magic.keys():
-                    magic[x]["level"] = 0
-                magic["magic_bullet"]["level"] = 1
-                magic["spirit_bullet"]["level"] = 1
-                attacks = {x : [] for x in magic.keys()} #All attacks integrated into one dictionary
-                explosions = []
-                attacks["electric_zone"].append(Zone(
-                    (player.center-[magic["electric_zone"]["size"]/2, magic["electric_zone"]["size"]/2]),
-                    ["electric_zone.png"],
-                    magic["electric_zone"]["size"],
-                    np.inf,
-                    gameSpeed
-                    ))
+                    chests = []
+                    n = 1
+                    for x in range(n):
+                        chests.append(spawnObj("chest"))
 
-                #Tracked values
-                score = 0
-                total_mana = 0
-                #Metrics for recording passage of time
-                timer = 0 #Frame counter
-                ticks = 0 #1/10th of a second
+                    #Attacks
+                    for x in magic.keys():
+                        magic[x]["level"] = 0
+                    magic["magic_bullet"]["level"] = 1
+                    magic["spirit_bullet"]["level"] = 1
+                    attacks = {x : [] for x in magic.keys()} #All attacks integrated into one dictionary
+                    explosions = []
+                    attacks["electric_zone"].append(Zone(
+                        (player.center-[magic["electric_zone"]["size"]/2, magic["electric_zone"]["size"]/2]),
+                        ["electric_zone.png"],
+                        magic["electric_zone"]["size"],
+                        np.inf,
+                        gameSpeed
+                        ))
 
-                direct = []
-                bot_move = []
-                if graph_fps: fps = [[],[]]
-                options = []
-                optionScroll = 0
+                    #Tracked values
+                    score = 0
+                    total_mana = 0
+                    #Metrics for recording passage of time
+                    timer = 0 #Frame counter
+                    ticks = 0 #1/10th of a second
+
+                    direct = []
+                    bot_move = []
+                    if graph_fps: fps = [[],[]]
+                    options = []
+                    optionScroll = 0
             
             #End game
             else:
@@ -867,6 +892,12 @@ while running:
                         selected = True
                         break
         
+        #Bot selection
+        if bot_play:
+            if ai_mode == "train":
+                optionScroll = np.random.randint(0, len(options))
+                selected = True
+
         if selected:
             upgrade = options[optionScroll]
             #Upgrade selected magic
@@ -940,4 +971,10 @@ if show_stats:
 if graph_fps:
     print("Average fps: ", np.array(fps[1]).mean())
     plt.plot(fps[0], fps[1])
+    plt.show()
+
+if bot_play and ai_mode == "train":
+    rewards, survival_times = trainer.get_metrics()
+    plt.plot(rewards)
+    plt.plot(survival_times)
     plt.show()

@@ -26,7 +26,7 @@ enemyInfo = {
         "hp" : 80,
         "dmg" : 20,
         "spd" : .8,
-        "mana" : 15,
+        "mana" : 20,
         "weight" : 50
     },
 
@@ -42,7 +42,7 @@ enemyInfo = {
         "hp" : 200,
         "dmg" : 20,
         "spd" : .5,
-        "mana" : 20,
+        "mana" : 25,
         "weight" : 10
     },
 
@@ -50,7 +50,7 @@ enemyInfo = {
         "hp" : 100,
         "dmg" : 20,
         "spd" : 1,
-        "mana" : 20,
+        "mana" : 25,
         "weight" : 50
     },
 
@@ -58,7 +58,7 @@ enemyInfo = {
         "hp" : 250,
         "dmg" : 40,
         "spd" : .9,
-        "mana" : 40,
+        "mana" : 50,
         "weight" : 25
     },
 
