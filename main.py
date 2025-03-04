@@ -5,6 +5,7 @@ import os
 import numpy as np
 from pygame import mixer
 import matplotlib.pyplot as plt
+from collections import deque
 
 from objects import *
 from gamedata import *
@@ -18,7 +19,7 @@ from ai import *
 show_stats = True #Show statistics at the end of a game
 graph_fps = False #Enable to record fps
 immortal = False #Infinite health
-bot_play = False #Enable bot play
+bot_play = True #Enable bot play
 
 keyMove = True #Keyboard/mouse movement
 
@@ -35,21 +36,6 @@ pause = False
 lvlUp = False
 mouseMove = not keyMove
 
-#AI setup
-ai_mode = "train" #train/test
-model_name = "basic_ddqn_1"
-model_path = os.path.join(os.path.dirname(__file__), "models", model_name)
-if bot_play:
-    keyMove = True
-    mouseMove = False
-
-    if ai_mode == "test":
-        model = load_model(model_path)
-    elif ai_mode == "train":
-        trainer = Trainer(
-            model_path,
-            num_episodes=50,
-        )
 
 playerImg = pg.image.load(os.path.join(os.path.dirname(__file__), "assets", "player1.png"))
 pg.display.set_caption("Magic survival")
@@ -99,6 +85,34 @@ attacks["electric_zone"].append(Zone(
     gameSpeed
     ))
 
+# AI setup
+ai_mode = "test" #train/test
+model_name = "basic_ddqn_1"
+model_path = os.path.join(os.path.dirname(__file__), "experiments", model_name)
+state = deque(maxlen=2)
+ai_vision = []
+num_vision = 32
+cur_reward = 0
+if bot_play:
+    keyMove = True
+    mouseMove = False
+
+    if ai_mode == "test":
+        model = load_model(model_path)
+    elif ai_mode == "train":
+        trainer = Trainer(
+            model_path,
+            num_episodes=200,
+        )
+if bot_play:
+    angle = 180
+    for _ in range(num_vision):
+        vec = np.array([np.sin(angle*np.pi/180), np.cos(angle*np.pi/180)])
+        target = (vec*100) + player.center
+        ai_vision.append(Line(player.center, ["arcane_ray.png"], target, [1, 660], 10, gameSpeed))
+        angle -= 360/num_vision
+        angle = angle % 360
+
 #Tracked values
 score = 0
 total_mana = 0
@@ -117,6 +131,7 @@ while running:
     tmp = int(round((constSpeed/gameSpeed)/10)) #Tick rate timer (0.1s converted to frames)
     tmp = tmp if tmp>0 else 1
     alive = True
+    action = 0
     if not lvlUp: screen.fill((80,60,80)) #0,100,0
 
     #Events o(n) can't do anything about this one's time complexity tho
@@ -142,12 +157,16 @@ while running:
     if bot_play: #Moves every tick
         if timer % tmp == 0 and timer != 0:
             moves = np.array(["left", "right", "up", "down"])
+            # Environment state (engineer values here)
+            state.append(get_environment_state(player.center, ai_vision, enemies, mana_items).flatten())
             # Bot decision making
-            choices = np.random.randint(0,2,4) #Random choice
+            # choices = np.random.randint(0,2,4) #Random choice
             if ai_mode == "train":
-                choices = trainer.rl_model.action_space[trainer.get_action(...)] #state
+                action = trainer.get_action(np.array([state[-1]]))
+                choices = trainer.rl_model.action_space[action] #state
             elif ai_mode == "test":
-                choices = model.action_space[model.play_one_step(..., epsilon=0.0, training=False)] #state
+                action = model.play_one_step(np.array([state[-1]]), epsilon=0.0, training=False)
+                choices = model.action_space[action] #state
             bot_move = moves[choices==1].tolist()
         direct = bot_move
     
@@ -221,6 +240,8 @@ while running:
             if boxCollision(player.hitbox, mana_items[i].hitbox):
                 player.mana["amt"] += manaObj.mana
                 total_mana += manaObj.mana
+                if bot_play and ai_mode == "train":
+                    cur_reward += 200
                 del mana_items[i]
                 continue
             
@@ -443,6 +464,8 @@ while running:
                         else:
                             player.hp -= enemy.dmg
                             healthBar.setLength(player.hp, 100)
+                            if bot_play and ai_mode == "train":
+                                cur_reward -= 200
                         plyrDmgCd = ticks + 5
                         if player.hp <= 0:
                             alive = False
@@ -450,9 +473,12 @@ while running:
 
             #Environment response to bot
             if bot_play and ai_mode == "train":
-                trainer.receive_response(...) # new_state, reward, done, truncated
+                cur_reward += 10
+                state.append(get_environment_state(player.center, ai_vision, enemies, mana_items).flatten())
                 if trainer.num_steps and trainer.current_step == trainer.num_steps:
                     alive = False
+                trainer.receive_response(state[0], action, cur_reward, state[1], alive, alive) # state, action, reward, new_state, done, truncated
+                cur_reward = 0
 
 
         #Magic Bullet spawn
@@ -765,6 +791,8 @@ while running:
 
             manaBar.setLength(player.mana["amt"], player.mana["cap"])
         
+        for i,vision_line in enumerate(ai_vision):
+            vision_line.draw(screen, showImage=False, colour=(0,255,0))
         player.draw(screen)
         manaBar.draw(screen)
         healthBar.draw(screen)
@@ -975,6 +1003,10 @@ if graph_fps:
 
 if bot_play and ai_mode == "train":
     rewards, survival_times = trainer.get_metrics()
+    plt.subplot(1,2,1)
     plt.plot(rewards)
+    plt.title("Reward History")
+    plt.subplot(1,2,2)
     plt.plot(survival_times)
+    plt.title("Survival Time History (ticks)")
     plt.show()

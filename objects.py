@@ -107,7 +107,6 @@ class NonPlayerObject(Object):
             self.pos[0] = rd.randint(spawnBound[0], spawnBound[1])
             self.pos[1] = rd.randint(spawnBound[2], renderBound[2])
 
-
 class Enemy(NonPlayerObject):
     def __init__(self, position, images, hp, dmg, speed, mana, enemyType, gSpeed):
         super().__init__(position, images[0], gSpeed)
@@ -237,9 +236,9 @@ class Line(NonPlayerObject):
         self.size = size
 
         x,y = self.target[0],self.target[1]
-        if (x>0 and y<0) or (x<0 and y<0):
+        if y<0:
             self.angle += 180
-        if x<0 and y>0:
+        if x<0 and y>=0:
             self.angle += 360
         
         if self.angle > 90 and self.angle <= 180:
@@ -256,9 +255,9 @@ class Line(NonPlayerObject):
             super().draw(screen)
         else:
             start, end = [], []
-            if (self.angle > 0 and self.angle <= 90) or (self.angle > 180 and self.angle <= 270):
+            if (self.angle >= 0 and self.angle < 90) or (self.angle >= 180 and self.angle < 270):
                 start, end = self.hitbox[0], self.hitbox[1]
-            if (self.angle > 90 and self.angle <= 180) or (self.angle > 270 and self.angle <= 360):
+            if (self.angle >= 90 and self.angle < 180) or (self.angle >= 270 and self.angle < 360):
                 start, end = self.hitbox[0]+[0,self.image.get_height()], self.hitbox[1]-[0,self.image.get_height()]
             pg.draw.line(screen, colour, start, end)
 

@@ -205,4 +205,29 @@ def decipherUpgrade(magic):
     else:
         return magic["description"]
 
+def get_environment_state(player_center, ai_vision, enemies, mana_items):
+    # State detection
+    cur_state = []
+    for vision_line in ai_vision:
+        detected_objects = []
+        for enemy in enemies:
+            if lineCollision(enemy, vision_line):
+                detected_objects.append([enemy, "enemy"])
+        for mana_item in mana_items:
+            if lineCollision(mana_item, vision_line):
+                detected_objects.append([mana_item, "mana"])
+        line_sense = []
+        if detected_objects:
+            detected_objects = np.array(detected_objects)
+            closest = getClosest(detected_objects[:, 0], player_center)
+            dist = magnitude(detected_objects[:, 0][closest].center - player_center)/660
+            if detected_objects[:, 1][closest] == "enemy":
+                line_sense = [-1, dist]
+            elif detected_objects[:, 1][closest] == "mana":
+                line_sense = [1, dist]
+        else:
+            line_sense = [0, vision_line.size[1]/660]
+        cur_state.append(line_sense)
+    return np.array(cur_state)
+
 if __name__ == "__main__": pass

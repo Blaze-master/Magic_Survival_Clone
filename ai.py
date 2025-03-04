@@ -12,7 +12,7 @@ class DeepQModel():
             action_space,
             state_decoder=None, 
             buffer_size = 3000, 
-            gamma = 0.95,):
+            gamma = 0.99):
         
         self.model = base_model
         self.target = tf.keras.models.clone_model(self.model)
@@ -96,59 +96,52 @@ class DeepQModel():
     def update_target(self):
         self.target.set_weights(self.model.get_weights())
     
+# # train_kwargs: current_step, current_episode, total_episodes, epsilon_threshold, min_epsilon
+# def get_model_action(
+#         model: DeepQModel,
+#         mode,
+#         state,
+#         **train_kwargs
+#     ):
+#     if mode == "test":
+#         model_action = model.play_one_step(state, epsilon=0.0, training=False)
+#     elif mode == "train":
+#         epsilon = max(train_kwargs["min_epsilon"], 1 - train_kwargs["current_episode"] / (train_kwargs["total_episodes"] * train_kwargs["epsilon_threshold"]))
+#         model_action = model.play_one_step(state, epsilon=epsilon)
+#     return model_action
+
+# def receive_response(
+#         model: DeepQModel,
+#         new_state,
+#         reward,
+#         done,
+#         truncated,
+#     ):
+#     model.remember(model.state_decoder(new_state) if model.state_decoder else new_state, reward, done, truncated)
+
+def build_model():
+    tf.random.set_seed(42)
+
+    inputs = tf.keras.layers.Input(shape=(32*2,)) #Expected input shape
+    hidden1 = tf.keras.layers.Dense(32, activation="relu", kernel_initializer="he_normal")(inputs)
+    hidden2 = tf.keras.layers.Dense(32, activation="relu", kernel_initializer="he_normal")(hidden1)
+
+    state_values = tf.keras.layers.Dense(1)(hidden2)
+    raw_advantages = tf.keras.layers.Dense(16)(hidden2) # Expected number of actions
+    advantages = raw_advantages - tf.reduce_max(raw_advantages, axis=1, keepdims=True)
+    Q_values = state_values + advantages
+
+    base_model = tf.keras.Model(inputs=[inputs], outputs=[Q_values])
+    return base_model
 
 def load_model(path):
-    base_model = None
-    with open(os.path.join(path, "build_config.txt"), "r") as f:
-        build_config = f.read()
-        exec(build_config)
+    base_model = tf.keras.models.load_model(os.path.join(path, "model.keras"))
     optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
     loss_fn = tf.keras.losses.mean_squared_error
     action_space = np.array([list(map(int, list(bin(i)[2:].zfill(4)))) for i in range(16)]) # Every possible combination of directions
     state_decoder = None
     rl_model = DeepQModel(base_model, optimizer, loss_fn, action_space, state_decoder)
-    rl_model.load(os.path.join(path, "weights"))
     return rl_model
-
-# train_kwargs: current_step, current_episode, total_episodes, epsilon_threshold, min_epsilon
-def get_model_action(
-        model: DeepQModel,
-        mode,
-        state,
-        **train_kwargs
-    ):
-    if mode == "test":
-        model_action = model.play_one_step(state, epsilon=0.0, training=False)
-    elif mode == "train":
-        epsilon = max(train_kwargs["min_epsilon"], 1 - train_kwargs["current_episode"] / (train_kwargs["total_episodes"] * train_kwargs["epsilon_threshold"]))
-        model_action = model.play_one_step(state, epsilon=epsilon)
-    return model_action
-
-def receive_response(
-        model: DeepQModel,
-        new_state,
-        reward,
-        done,
-        truncated,
-    ):
-    model.remember(model.state_decoder(new_state) if model.state_decoder else new_state, reward, done, truncated)
-
-# Note: Save the text in this function in a file named "build_config.txt" in the same directory as the model weights
-def build_model():
-    tf.random.set_seed(42)
-
-    inputs = tf.keras.layers.Input(shape=(...)) #Expected input shape
-    hidden1 = tf.keras.layers.Dense(32, activation="relu", kernel_initializer="he_normal")(inputs)
-    hidden2 = tf.keras.layers.Dense(32, activation="relu", kernel_initializer="he_normal")(hidden1)
-
-    state_values = tf.keras.layers.Dense(1)(hidden2)
-    raw_advantages = tf.keras.layers.Dense(...)(hidden2) # Expected number of actions
-    advantages = raw_advantages - tf.reduce_max(raw_advantages, axis=1, keepdims=True)
-    Q_values = state_values + advantages
-
-    base_model = tf.keras.Model(inputs=[inputs], outputs=[Q_values])
-    #Text cut-off
-    return base_model
 
 class Trainer():
     def __init__(
@@ -157,14 +150,16 @@ class Trainer():
             num_steps = None, # Number of ticks to train per episode
             batch_size = 128,
             num_episodes = 200,
-            first_training_epoch = 20,
+            first_training_epoch = 10,
             min_epsilon = 0.01,
             epsilon_threshold = 0.8,
             update_interval = 10,
             initial_lr = 1e-3,
             final_lr = None,
+            verbose = True,
     ):
         self.rl_model = None
+        self.model_path = model_path
         self.num_steps = num_steps
         self.batch_size = batch_size
         self.num_episodes = num_episodes
@@ -174,9 +169,12 @@ class Trainer():
         self.update_interval = update_interval
         self.initial_lr = initial_lr
         self.final_lr = final_lr
+        self.verbose = verbose
+
         try:
-            self.rl_model = load_model(model_path)
-        except FileNotFoundError:
+            self.rl_model = load_model(self.model_path)
+            self.rl_model.update_target()
+        except OSError:
             base_model = build_model()
             optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
             loss_fn = tf.keras.losses.mean_squared_error
@@ -188,7 +186,7 @@ class Trainer():
                 loss_fn, 
                 action_space, 
                 state_decoder)
-        self.model_weights_path = os.path.join(model_path, "weights")
+            
         self.reward_history = []
         self.survival_history = []
         self.current_episode = 0
@@ -201,21 +199,24 @@ class Trainer():
         epsilon = max(self.min_epsilon, 1 - self.current_episode / (self.num_episodes * self.epsilon_threshold))
         return self.rl_model.play_one_step(state, epsilon=epsilon, training=False)
     
-    def receive_response(self, new_state, reward, done, truncated):
-        self.rl_model.remember(self.rl_model.state_decoder(new_state) if self.rl_model.state_decoder else new_state, reward, done, truncated)
+    def receive_response(self, state, action, reward, new_state, done, truncated):
+        self.rl_model.remember(state, action, reward, self.rl_model.state_decoder(new_state) if self.rl_model.state_decoder else new_state, done, truncated)
         self.episode_rewards += reward
     
     def end_episode(self):
         self.reward_history.append(self.episode_rewards)
         self.survival_history.append(self.current_step)
         self.current_episode += 1
+        if self.verbose:
+            print(f"Episode {self.current_episode} - Reward: {self.episode_rewards} - Steps Survived: {self.current_step}")
         self.current_step = 0
+        self.episode_rewards = 0
         if self.current_episode >= self.first_training_epoch:
             self.rl_model.training_step(self.batch_size)
         if self.current_episode+1 % self.update_interval == 0:
             self.rl_model.update_target()
         if self.final_lr: self.rl_model.optimizer.learning_rate = self.initial_lr * (self.lr_factor**self.current_episode)
-        self.rl_model.save(self.model_weights_path)
+        self.rl_model.model.save(os.path.join(self.model_path, "model.keras"))
     
     def get_metrics(self):
         return self.reward_history, self.survival_history

@@ -522,7 +522,8 @@ if testMagic:
     # magic[testMagic]["level"] = 1
     # magic["electric_zone"]["max"] = 1
 
-availableMagic = [x if magic[x]["level"] < magic[x]["max"] else None for x in magic.keys()]
+# availableMagic = [x if magic[x]["level"] < magic[x]["max"] else None for x in magic.keys()]
+availableMagic = []
 while None in availableMagic:
     availableMagic.remove(None)
 
