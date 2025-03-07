@@ -88,8 +88,10 @@ attacks["electric_zone"].append(Zone(
 # AI setup
 ai_mode = "test" #train/test
 model_name = "basic_ddqn_1"
+display_mode = "ai vision" #default/no lines/ai vision/none
 model_path = os.path.join(os.path.dirname(__file__), "experiments", model_name)
 state = deque(maxlen=2)
+observation = []
 ai_vision = []
 num_vision = 32
 cur_reward = 0
@@ -104,12 +106,12 @@ if bot_play:
             model_path,
             num_episodes=200,
         )
-if bot_play:
+
     angle = 180
     for _ in range(num_vision):
         vec = np.array([np.sin(angle*np.pi/180), np.cos(angle*np.pi/180)])
         target = (vec*100) + player.center
-        ai_vision.append(Line(player.center, ["arcane_ray.png"], target, [1, 660], 10, gameSpeed))
+        ai_vision.append(Line(player.center, ["arcane_ray.png"], target, [1, 660], 3, gameSpeed))
         angle -= 360/num_vision
         angle = angle % 360
 
@@ -158,7 +160,8 @@ while running:
         if timer % tmp == 0 and timer != 0:
             moves = np.array(["left", "right", "up", "down"])
             # Environment state (engineer values here)
-            state.append(get_environment_state(player.center, ai_vision, enemies, mana_items).flatten())
+            observation = get_environment_state(player.center, ai_vision, enemies, mana_items)
+            state.append(observation[:, :-1].flatten())
             # Bot decision making
             # choices = np.random.randint(0,2,4) #Random choice
             if ai_mode == "train":
@@ -209,17 +212,18 @@ while running:
 
         #Object movements
         #Background movement o(n)
-        for i, bg in enumerate(background):
-            if keyMove: background[i].keyMove(direct, playerSpeed) 
-            if mouseMove: background[i].mouseMove(mouseDir, playerSpeed)
+        if display_mode != "none":
+            for i, bg in enumerate(background):
+                if keyMove: background[i].keyMove(direct, playerSpeed) 
+                if mouseMove: background[i].mouseMove(mouseDir, playerSpeed)
 
-            #Background respawns if out of range
-            background[i].respawn(
-                [bg_xmin, bg_xmax, bg_ymin, bg_ymax],
-                [xmin, xmax, ymin, ymax]
-            )
-            
-            background[i].draw(screen)
+                #Background respawns if out of range
+                background[i].respawn(
+                    [bg_xmin, bg_xmax, bg_ymin, bg_ymax],
+                    [xmin, xmax, ymin, ymax]
+                )
+                
+                background[i].draw(screen)
         
         #Mana item movement o(n)
         for i, manaObj in enumerate(mana_items):
@@ -241,11 +245,17 @@ while running:
                 player.mana["amt"] += manaObj.mana
                 total_mana += manaObj.mana
                 if bot_play and ai_mode == "train":
-                    cur_reward += 200
+                    cur_reward += 1000
                 del mana_items[i]
                 continue
             
-            mana_items[i].draw(screen)
+            if display_mode != "none":
+                if display_mode == "ai vision":
+                    for obj in observation:
+                        if obj[-1] == id(mana_items[i]):
+                            mana_items[i].draw(screen)
+                else:
+                    mana_items[i].draw(screen)
         
         #Chest item movement o(n)
         for i,chest in enumerate(chests):
@@ -260,8 +270,9 @@ while running:
             elif not inBox(chests[i].center, [[fs_xmin, fs_ymin],[fs_xmax, fs_ymax]]):
                 del chests[i]
                 continue
-            
-            chests[i].draw(screen)
+
+            if display_mode != "ai vision" and display_mode != "none":
+                chests[i].draw(screen)
         
         #Enemy movement o(n)
         for i, obj in enumerate(enemies):
@@ -389,11 +400,12 @@ while running:
                 score += 1
         
         #Draw attacks that are below enemies
-        for mag in attacks.keys():
-            if magic[mag]["level"]>0 and ("below" in magic[mag]["deets"]):
-                for att in attacks[mag]:
-                    att.draw(screen)
-                    pass
+        if display_mode != "ai vision" and display_mode != "none":
+            for mag in attacks.keys():
+                if magic[mag]["level"]>0 and ("below" in magic[mag]["deets"]):
+                    for att in attacks[mag]:
+                        att.draw(screen)
+                        pass
         
         #Enemy Collision detection o(n^2) --> o(n?) i.e sumtorial ~28-33% faster
         for i,enemy in enumerate(enemies):
@@ -405,15 +417,22 @@ while running:
                     factor = (enemy.rad+other.rad)*0.9/res             
                     move = dist*(factor-1)/10 #10
                     enemies[i].pos += move
-            enemies[i].draw(screen)
+            if display_mode != "none":
+                if display_mode == "ai vision":
+                    for obj in observation:
+                        if obj[-1] == id(enemies[i]):
+                            enemies[i].draw(screen)
+                else:
+                    enemies[i].draw(screen)
             pass
 
         #Draw attacks that are above enemies
-        for mag in attacks.keys():
-            if magic[mag]["level"]>0 and not ("below" in magic[mag]["deets"]):
-                for att in attacks[mag]:
-                    att.draw(screen)
-                    pass
+        if display_mode != "ai vision" and display_mode != "none":
+            for mag in attacks.keys():
+                if magic[mag]["level"]>0 and not ("below" in magic[mag]["deets"]):
+                    for att in attacks[mag]:
+                        att.draw(screen)
+                        pass
 
         
         #Event ticks
@@ -465,7 +484,7 @@ while running:
                             player.hp -= enemy.dmg
                             healthBar.setLength(player.hp, 100)
                             if bot_play and ai_mode == "train":
-                                cur_reward -= 200
+                                cur_reward -= 0
                         plyrDmgCd = ticks + 5
                         if player.hp <= 0:
                             alive = False
@@ -473,8 +492,8 @@ while running:
 
             #Environment response to bot
             if bot_play and ai_mode == "train":
-                cur_reward += 10
-                state.append(get_environment_state(player.center, ai_vision, enemies, mana_items).flatten())
+                cur_reward += 5
+                state.append(get_environment_state(player.center, ai_vision, enemies, mana_items)[:, :-1].flatten())
                 if trainer.num_steps and trainer.current_step == trainer.num_steps:
                     alive = False
                 trainer.receive_response(state[0], action, cur_reward, state[1], alive, alive) # state, action, reward, new_state, done, truncated
@@ -791,8 +810,9 @@ while running:
 
             manaBar.setLength(player.mana["amt"], player.mana["cap"])
         
-        for i,vision_line in enumerate(ai_vision):
-            vision_line.draw(screen, showImage=False, colour=(0,255,0))
+        if display_mode != "no lines" and display_mode != "none":
+            for i,vision_line in enumerate(ai_vision):
+                vision_line.draw(screen, showImage=False, colour=(0,255,0))
         player.draw(screen)
         manaBar.draw(screen)
         healthBar.draw(screen)

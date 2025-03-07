@@ -140,8 +140,11 @@ class Mana(NonPlayerObject):
     def __init__(self, position, mana, speed, gSpeed):
         image = mana+"_mana.png"
         self.mana = 100 if mana=="large" else 25 if mana=="medium" else 10
+        position = [rd.randint(0,1160), rd.randint(0,610)]
         super().__init__(position, image, gSpeed)
+        self.image = pg.transform.scale(self.image, [30,30]) #Made mana orbs bigger for AI vision
         self.rad = self.image.get_width()/2
+        # self.rad = 50
         self.center = self.pos+self.rad
         self.moveSpeed = speed
     

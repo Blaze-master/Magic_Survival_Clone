@@ -225,8 +225,9 @@ def get_environment_state(player_center, ai_vision, enemies, mana_items):
                 line_sense = [-1, dist]
             elif detected_objects[:, 1][closest] == "mana":
                 line_sense = [1, dist]
+            line_sense.append(id(detected_objects[:, 0][closest]))
         else:
-            line_sense = [0, vision_line.size[1]/660]
+            line_sense = [0, vision_line.size[1]/660, 0]
         cur_state.append(line_sense)
     return np.array(cur_state)
 
